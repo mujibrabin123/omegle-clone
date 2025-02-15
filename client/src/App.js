@@ -5,8 +5,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 const socket = io("https://server-crimson-wildflower-4430.fly.dev");
 
-
-
 function App() {
   const [partnerId, setPartnerId] = useState(null);
   const [searching, setSearching] = useState(false);
@@ -102,6 +100,12 @@ function App() {
         initiator,
         trickle: false,
         stream: userStream,
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" }
+            // Optionally add TURN servers here if needed.
+          ],
+        },
       });
       peer.on("signal", (signal) => {
         socket.emit("signal", { partnerId, signal });
