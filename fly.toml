@@ -1,10 +1,15 @@
 app = "omegle-clone"
 
 [build]
-  dockerfile = "Dockerfile"  # Assuming Dockerfile is at the root level.
+  # This tells Fly.io to use a Node.js environment
+  image = "node:16"  # Replace with your desired Node.js version if needed
 
 [env]
-  NODE_ENV = "production"
+  PORT = "3000"  # Make sure this is the same port your app uses
 
-[deploy]
-  release_command = "npm install --production"
+[[services]]
+  http_checks = []
+  internal_port = 3000
+  processes = ["app"]
+  protocol = "tcp"
+  ports = [{ port = 80 }]
