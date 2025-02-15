@@ -5,10 +5,10 @@ app = "omegle-clone"
   image = "node:22"
 
 [env]
-  PORT = "5000"  # Ensure this matches your server.js PORT
+  PORT = "3000"  # Ensure this matches your server.js PORT
 
 [[services]]
-  internal_port = 5000  # Use 5000 instead of 3000
+  internal_port = 3000  # Use 5000 instead of 3000
   processes = ["app"]
   protocol = "tcp"
 
