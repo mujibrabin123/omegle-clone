@@ -14,7 +14,7 @@ function App() {
   const [partnerStream, setPartnerStream] = useState(null);
   // Capture our own socket ID.
   const [myId, setMyId] = useState("");
-  
+
   // Chat state.
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -116,6 +116,7 @@ function App() {
           partnerVideo.current.srcObject = remoteStream;
         }
       });
+      peer.on("error", (err) => console.error("Peer error:", err));
       peerRef.current = peer;
     } catch (err) {
       console.error("Error accessing media devices:", err);
@@ -142,6 +143,8 @@ function App() {
       peerRef.current = null;
     }
     socket.emit("nextPartner");
+    // Immediately requeue by calling findPartner.
+    findPartner();
   };
 
   return (

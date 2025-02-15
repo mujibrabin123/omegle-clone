@@ -72,7 +72,7 @@ io.on("connection", (socket) => {
       activePairs.delete(socket.id);
     }
     waitingUsers = waitingUsers.filter((user) => user.socketId !== socket.id);
-    socket.emit("findPartner", []); // requeue with an empty interest array
+    // Do not automatically emit a new findPartner event; let the client requeue.
   });
 
   // Handle chat messages.
