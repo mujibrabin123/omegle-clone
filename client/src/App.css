@@ -14,7 +14,8 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .sidebar .branding h2 {
@@ -22,17 +23,17 @@
   font-size: 2rem;
 }
 
-.sidebar .user-stats p {
-  margin: 5px 0;
-}
-
-.sidebar .download-links img {
-  width: 100px;
-  margin-right: 10px;
+.sidebar .branding p {
+  font-size: 0.9rem;
+  margin: 5px 0 20px;
 }
 
 .partner-search {
-  margin-top: 20px;
+  width: 100%;
+}
+
+.partner-search .form-control {
+  width: 100%;
 }
 
 /* Main content styling */
@@ -80,6 +81,7 @@
 .common-interests {
   margin-top: 15px;
   color: #fff;
+  font-size: 1.1rem;
 }
 
 /* Chat box styling */
@@ -87,24 +89,27 @@
   position: absolute;
   bottom: 20px;
   left: 20px;
-  width: 300px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 10px;
-  border-radius: 6px;
+  width: 320px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 8px;
   color: #fff;
+  font-size: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .chat-messages {
-  height: 120px;
+  height: 150px;
   overflow-y: auto;
   margin-bottom: 10px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .chat-message {
-  margin-bottom: 5px;
-  padding: 5px;
-  border-radius: 4px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  word-break: break-word;
 }
 
 .chat-message.sent {
@@ -123,14 +128,16 @@
 
 .chat-input input {
   flex: 1;
-  padding: 5px;
+  padding: 8px;
   border: none;
   border-radius: 4px;
   margin-right: 5px;
+  font-size: 1rem;
 }
 
 .chat-input button {
-  padding: 5px 10px;
+  padding: 8px 12px;
+  font-size: 1rem;
 }
 
 /* Control buttons */
@@ -140,4 +147,38 @@
 
 .control-buttons button {
   margin-right: 10px;
+}
+
+/* Responsive styling */
+@media (max-width: 768px) {
+  .app-wrapper {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    padding: 15px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sidebar .branding {
+    text-align: left;
+  }
+  .partner-search {
+    width: 40%;
+    margin: 0;
+  }
+  .main-content {
+    padding: 10px;
+  }
+  .video-container {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+  }
+  .chat-box {
+    position: relative;
+    width: 100%;
+    margin-top: 10px;
+  }
 }

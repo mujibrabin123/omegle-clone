@@ -160,14 +160,6 @@ function App() {
           <h2>link UP</h2>
           <p>Connect based on interests</p>
         </div>
-        <div className="user-stats">
-          <p>Online: 1234</p>
-          <p>Download our app:</p>
-          <div className="download-links">
-            <a href="#"><img src="/path/to/appstore.png" alt="App Store" /></a>
-            <a href="#"><img src="/path/to/googleplay.png" alt="Google Play" /></a>
-          </div>
-        </div>
         {!partnerId && (
           <div className="partner-search">
             <input
