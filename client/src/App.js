@@ -81,7 +81,7 @@ function App() {
     socket.emit("findPartner", interestList);
   };
 
-  // startVideoChat: enhanced audio constraints, mute local video, set remote volume.
+  // startVideoChat with enhanced audio constraints and forced playback of remote stream.
   const startVideoChat = async (initiator) => {
     try {
       const userStream = await navigator.mediaDevices.getUserMedia({
@@ -97,7 +97,7 @@ function App() {
       setStream(userStream);
       if (userVideo.current) {
         userVideo.current.srcObject = userStream;
-        userVideo.current.muted = true; // Mute local preview so you don't hear yourself.
+        userVideo.current.muted = true; // Mute local preview.
       }
       const peer = new SimplePeer({
         initiator,
@@ -112,18 +112,22 @@ function App() {
               credential: "muazkh"
             }
           ],
-          iceTransportPolicy: "relay" // Force relay (TURN) if necessary.
+          iceTransportPolicy: "relay"
         },
       });
       peer.on("signal", (signal) => {
         socket.emit("signal", { partnerId, signal });
       });
       peer.on("stream", (remoteStream) => {
+        console.log("Remote stream audio tracks:", remoteStream.getAudioTracks().length);
         setPartnerStream(remoteStream);
         if (partnerVideo.current) {
           partnerVideo.current.srcObject = remoteStream;
           partnerVideo.current.muted = false;
           partnerVideo.current.volume = 1.0;
+          partnerVideo.current.onloadedmetadata = () => {
+            partnerVideo.current.play().catch((err) => console.error("Error playing remote stream:", err));
+          };
         }
       });
       peer.on("error", (err) => console.error("Peer error:", err));
