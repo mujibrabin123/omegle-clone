@@ -1,0 +1,10 @@
+app = "omegle-clone"
+
+[build]
+  dockerfile = "server/Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+
+[deploy]
+  release_command = "npm install --production"
