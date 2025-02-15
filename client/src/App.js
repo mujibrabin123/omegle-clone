@@ -33,7 +33,6 @@ function App() {
       setPartnerId(partnerId);
       setCommonInterests(commonInterests);
       setSearching(false);
-      // Video chat will start once both IDs are available.
     });
 
     socket.on("signal", ({ signal, from }) => {
@@ -70,13 +69,12 @@ function App() {
   // When both our socket ID and the partner's ID are available, start the video chat.
   useEffect(() => {
     if (partnerId && myId && !peerRef.current) {
-      // Determine the initiator based on lexicographical order.
       const initiator = myId < partnerId;
       startVideoChat(initiator);
     }
   }, [partnerId, myId]);
 
-  // Modified: Interests are optional.
+  // Interests are optional.
   const findPartner = () => {
     setSearching(true);
     const interestList = interests.trim()
@@ -85,7 +83,7 @@ function App() {
     socket.emit("findPartner", interestList);
   };
 
-  // Create the video chat connection.
+  // Updated startVideoChat: Using trickle disabled and forcing relay via iceTransportPolicy.
   const startVideoChat = async (initiator) => {
     try {
       const userStream = await navigator.mediaDevices.getUserMedia({
@@ -98,7 +96,7 @@ function App() {
       }
       const peer = new SimplePeer({
         initiator,
-        trickle: true, // Enable trickle ICE.
+        trickle: false, // Disable trickle ICE
         stream: userStream,
         config: {
           iceServers: [
@@ -109,6 +107,7 @@ function App() {
               credential: "muazkh"
             }
           ],
+          iceTransportPolicy: "relay"  // Force relay (TURN) if necessary.
         },
       });
       peer.on("signal", (signal) => {
@@ -121,18 +120,14 @@ function App() {
         }
       });
       peer.on("error", (err) => console.error("Peer error:", err));
-      
-      // Optional: log ICE state changes for debugging.
       peer.on("iceStateChange", (state) => console.log("ICE state:", state));
       peer.on("connect", () => console.log("Peer connected!"));
-
       peerRef.current = peer;
     } catch (err) {
       console.error("Error accessing media devices:", err);
     }
   };
 
-  // Send chat message.
   const sendMessage = () => {
     if (newMessage.trim() === "") return;
     socket.emit("sendMessage", newMessage);
@@ -140,7 +135,6 @@ function App() {
     setNewMessage("");
   };
 
-  // Disconnect current partner and requeue.
   const nextPartner = () => {
     setPartnerId(null);
     setCommonInterests([]);
@@ -152,7 +146,6 @@ function App() {
       peerRef.current = null;
     }
     socket.emit("nextPartner");
-    // Immediately requeue by calling findPartner.
     findPartner();
   };
 
