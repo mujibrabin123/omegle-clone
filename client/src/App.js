@@ -14,7 +14,7 @@ function App() {
   const [partnerStream, setPartnerStream] = useState(null);
   // Capture our own socket ID.
   const [myId, setMyId] = useState("");
-
+  
   // Chat state.
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -98,12 +98,16 @@ function App() {
       }
       const peer = new SimplePeer({
         initiator,
-        trickle: false,
+        trickle: true, // Enable trickle ICE.
         stream: userStream,
         config: {
           iceServers: [
-            { urls: "stun:stun.l.google.com:19302" }
-            // Optionally add TURN servers here if needed.
+            { urls: "stun:stun.l.google.com:19302" },
+            { 
+              urls: "turn:numb.viagenie.ca",
+              username: "webrtc@live.com",
+              credential: "muazkh"
+            }
           ],
         },
       });
@@ -117,6 +121,11 @@ function App() {
         }
       });
       peer.on("error", (err) => console.error("Peer error:", err));
+      
+      // Optional: log ICE state changes for debugging.
+      peer.on("iceStateChange", (state) => console.log("ICE state:", state));
+      peer.on("connect", () => console.log("Peer connected!"));
+
       peerRef.current = peer;
     } catch (err) {
       console.error("Error accessing media devices:", err);
