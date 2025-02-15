@@ -13,7 +13,7 @@ function App() {
   const [stream, setStream] = useState(null);
   const [partnerStream, setPartnerStream] = useState(null);
   const [myId, setMyId] = useState("");
-  
+
   // Chat state.
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -92,7 +92,7 @@ function App() {
           autoGainControl: true,
           sampleRate: 48000,
           channelCount: 2,
-        }
+        },
       });
       setStream(userStream);
       if (userVideo.current) {
@@ -106,13 +106,13 @@ function App() {
         config: {
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
-            { 
+            {
               urls: "turn:numb.viagenie.ca",
               username: "webrtc@live.com",
-              credential: "muazkh"
-            }
+              credential: "muazkh",
+            },
           ],
-          iceTransportPolicy: "relay"
+          // Removed iceTransportPolicy so that a direct connection via STUN is attempted first.
         },
       });
       peer.on("signal", (signal) => {
@@ -126,7 +126,9 @@ function App() {
           partnerVideo.current.muted = false;
           partnerVideo.current.volume = 1.0;
           partnerVideo.current.onloadedmetadata = () => {
-            partnerVideo.current.play().catch((err) => console.error("Error playing remote stream:", err));
+            partnerVideo.current.play().catch((err) =>
+              console.error("Error playing remote stream:", err)
+            );
           };
         }
       });
@@ -196,7 +198,15 @@ function App() {
           {/* Chat Box */}
           <div className="card mt-4 p-3">
             <h5>Chat</h5>
-            <div style={{ height: "150px", overflowY: "scroll", border: "1px solid #ccc", padding: "5px", marginBottom: "10px" }}>
+            <div
+              style={{
+                height: "150px",
+                overflowY: "scroll",
+                border: "1px solid #ccc",
+                padding: "5px",
+                marginBottom: "10px",
+              }}
+            >
               {messages.map((msg, index) => (
                 <div key={index} className={msg.sender === "you" ? "text-end" : "text-start"}>
                   <span className={msg.sender === "you" ? "badge bg-primary" : "badge bg-secondary"}>
