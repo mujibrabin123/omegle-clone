@@ -181,6 +181,14 @@ function App() {
             <div className="video-container">
               <video ref={partnerVideo} autoPlay playsInline className="partner-video" />
               <video ref={userVideo} autoPlay playsInline className="user-video-overlay" />
+              <div className="control-buttons-overlay">
+                <button onClick={() => window.location.reload()} className="btn btn-danger btn-lg">
+                  Disconnect
+                </button>
+                <button onClick={nextPartner} className="btn btn-warning btn-lg">
+                  Next
+                </button>
+              </div>
             </div>
             <div className="common-interests">
               <h4>Common Interests:</h4>
@@ -201,12 +209,10 @@ function App() {
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a message..."
                 />
-                <button onClick={sendMessage} className="btn btn-outline-light">Send</button>
+                <button onClick={sendMessage} className="btn btn-outline-light">
+                  Send
+                </button>
               </div>
-            </div>
-            <div className="control-buttons">
-              <button onClick={() => window.location.reload()} className="btn btn-danger">Disconnect</button>
-              <button onClick={nextPartner} className="btn btn-warning">Next</button>
             </div>
           </>
         ) : (

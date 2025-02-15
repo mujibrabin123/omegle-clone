@@ -77,6 +77,17 @@
   object-fit: cover;
 }
 
+/* Control buttons overlay */
+.control-buttons-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  z-index: 2;
+}
+
 /* Common interests display */
 .common-interests {
   margin-top: 15px;
@@ -138,15 +149,6 @@
 .chat-input button {
   padding: 8px 12px;
   font-size: 1rem;
-}
-
-/* Control buttons */
-.control-buttons {
-  margin-top: 20px;
-}
-
-.control-buttons button {
-  margin-right: 10px;
 }
 
 /* Responsive styling */
