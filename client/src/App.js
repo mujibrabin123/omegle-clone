@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
 import SimplePeer from "simple-peer";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./App.css";
 
 const socket = io("https://server-crimson-wildflower-4430.fly.dev");
 
@@ -13,8 +14,6 @@ function App() {
   const [stream, setStream] = useState(null);
   const [partnerStream, setPartnerStream] = useState(null);
   const [myId, setMyId] = useState("");
-
-  // Chat state.
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
 
@@ -23,7 +22,6 @@ function App() {
   const peerRef = useRef(null);
 
   useEffect(() => {
-    // Capture our socket ID.
     socket.on("connect", () => {
       setMyId(socket.id);
     });
@@ -64,7 +62,6 @@ function App() {
     };
   }, []);
 
-  // Start video chat when both our socket ID and partner's ID are available.
   useEffect(() => {
     if (partnerId && myId && !peerRef.current) {
       const initiator = myId < partnerId;
@@ -72,7 +69,6 @@ function App() {
     }
   }, [partnerId, myId]);
 
-  // Interests are optional.
   const findPartner = () => {
     setSearching(true);
     const interestList = interests.trim()
@@ -81,7 +77,6 @@ function App() {
     socket.emit("findPartner", interestList);
   };
 
-  // startVideoChat with enhanced audio constraints and forced playback of remote stream.
   const startVideoChat = async (initiator) => {
     try {
       const userStream = await navigator.mediaDevices.getUserMedia({
@@ -97,11 +92,11 @@ function App() {
       setStream(userStream);
       if (userVideo.current) {
         userVideo.current.srcObject = userStream;
-        userVideo.current.muted = true; // Mute local preview.
+        userVideo.current.muted = true;
       }
       const peer = new SimplePeer({
         initiator,
-        trickle: false, // Disable trickle ICE for reliability.
+        trickle: false,
         stream: userStream,
         config: {
           iceServers: [
@@ -112,19 +107,15 @@ function App() {
               credential: "muazkh",
             },
           ],
-          // Removed iceTransportPolicy to allow direct connection via STUN when possible.
         },
       });
       peer.on("signal", (signal) => {
         socket.emit("signal", { partnerId, signal });
       });
       peer.on("stream", (remoteStream) => {
-        console.log("Remote stream audio tracks:", remoteStream.getAudioTracks().length);
         setPartnerStream(remoteStream);
         if (partnerVideo.current) {
           partnerVideo.current.srcObject = remoteStream;
-          partnerVideo.current.muted = false;
-          partnerVideo.current.volume = 1.0;
           partnerVideo.current.onloadedmetadata = () => {
             partnerVideo.current.play().catch((err) =>
               console.error("Error playing remote stream:", err)
@@ -163,81 +154,76 @@ function App() {
   };
 
   return (
-    <div className="container text-center mt-5">
-      <h2 className="mb-4">link UP - Interest Matching</h2>
-      {!partnerId ? (
-        <div className="card p-4 shadow">
-          <input
-            type="text"
-            value={interests}
-            onChange={(e) => setInterests(e.target.value)}
-            placeholder="Enter interests (comma-separated) – optional"
-            className="form-control"
-          />
-          <button onClick={findPartner} disabled={searching} className="btn btn-primary mt-3">
-            {searching ? "Searching..." : "Find a Partner"}
-          </button>
-          {searching && <p className="text-muted mt-2">Looking for a chat partner...</p>}
+    <div className="app-wrapper">
+      <div className="sidebar">
+        <div className="branding">
+          <h2>link UP</h2>
+          <p>Connect based on interests</p>
         </div>
-      ) : (
-        <>
-          <h4 className="mt-4">Common Interests:</h4>
-          <p className="text-muted">
-            {commonInterests.length > 0 ? commonInterests.join(", ") : "No common interests"}
-          </p>
-          <div className="row mt-4">
-            <div className="col-md-6">
-              <h5>Your Video</h5>
-              <video ref={userVideo} autoPlay playsInline className="w-100 border border-primary rounded" />
-            </div>
-            <div className="col-md-6">
-              <h5>Partner's Video</h5>
-              <video ref={partnerVideo} autoPlay playsInline className="w-100 border border-danger rounded" />
-            </div>
+        <div className="user-stats">
+          <p>Online: 1234</p>
+          <p>Download our app:</p>
+          <div className="download-links">
+            <a href="#"><img src="/path/to/appstore.png" alt="App Store" /></a>
+            <a href="#"><img src="/path/to/googleplay.png" alt="Google Play" /></a>
           </div>
-          {/* Chat Box */}
-          <div className="card mt-4 p-3">
-            <h5>Chat</h5>
-            <div
-              style={{
-                height: "150px",
-                overflowY: "scroll",
-                border: "1px solid #ccc",
-                padding: "5px",
-                marginBottom: "10px",
-              }}
-            >
-              {messages.map((msg, index) => (
-                <div key={index} className={msg.sender === "you" ? "text-end" : "text-start"}>
-                  <span className={msg.sender === "you" ? "badge bg-primary" : "badge bg-secondary"}>
+        </div>
+        {!partnerId && (
+          <div className="partner-search">
+            <input
+              type="text"
+              value={interests}
+              onChange={(e) => setInterests(e.target.value)}
+              placeholder="Enter interests (optional)"
+              className="form-control"
+            />
+            <button onClick={findPartner} disabled={searching} className="btn btn-primary mt-3">
+              {searching ? "Searching..." : "Find a Partner"}
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="main-content">
+        {partnerId ? (
+          <>
+            <div className="video-container">
+              <video ref={partnerVideo} autoPlay playsInline className="partner-video" />
+              <video ref={userVideo} autoPlay playsInline className="user-video-overlay" />
+            </div>
+            <div className="common-interests">
+              <h4>Common Interests:</h4>
+              <p>{commonInterests.length > 0 ? commonInterests.join(", ") : "None"}</p>
+            </div>
+            <div className="chat-box">
+              <div className="chat-messages">
+                {messages.map((msg, index) => (
+                  <div key={index} className={`chat-message ${msg.sender === "you" ? "sent" : "received"}`}>
                     {msg.text}
-                  </span>
-                </div>
-              ))}
+                  </div>
+                ))}
+              </div>
+              <div className="chat-input">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                />
+                <button onClick={sendMessage} className="btn btn-outline-light">Send</button>
+              </div>
             </div>
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-              />
-              <button className="btn btn-outline-primary" onClick={sendMessage}>
-                Send
-              </button>
+            <div className="control-buttons">
+              <button onClick={() => window.location.reload()} className="btn btn-danger">Disconnect</button>
+              <button onClick={nextPartner} className="btn btn-warning">Next</button>
             </div>
+          </>
+        ) : (
+          <div className="welcome-message">
+            <h3>Welcome to link UP</h3>
+            <p>Enter your interests and find a chat partner instantly.</p>
           </div>
-          <div className="d-flex justify-content-center gap-3 mt-4">
-            <button onClick={() => window.location.reload()} className="btn btn-danger">
-              Disconnect
-            </button>
-            <button onClick={nextPartner} className="btn btn-warning">
-              Next
-            </button>
-          </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

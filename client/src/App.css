@@ -1,38 +1,143 @@
-.App {
-  text-align: center;
+/* App.css */
+
+.app-wrapper {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Sidebar styling */
+.sidebar {
+  width: 300px;
+  background: #1a1a1a;
+  color: #fff;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.sidebar .branding h2 {
+  margin: 0;
+  font-size: 2rem;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.sidebar .user-stats p {
+  margin: 5px 0;
+}
+
+.sidebar .download-links img {
+  width: 100px;
+  margin-right: 10px;
+}
+
+.partner-search {
+  margin-top: 20px;
+}
+
+/* Main content styling */
+.main-content {
+  flex: 1;
+  position: relative;
+  background: #000;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  padding: 20px;
 }
 
-.App-link {
-  color: #61dafb;
+/* Video container with overlayed user video */
+.video-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  height: 450px;
+  background: #000;
+  border: 2px solid #444;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.partner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-video-overlay {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 150px;
+  height: 100px;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+/* Common interests display */
+.common-interests {
+  margin-top: 15px;
+  color: #fff;
+}
+
+/* Chat box styling */
+.chat-box {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 300px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 10px;
+  border-radius: 6px;
+  color: #fff;
+}
+
+.chat-messages {
+  height: 120px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.chat-message {
+  margin-bottom: 5px;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.chat-message.sent {
+  background: #007bff;
+  text-align: right;
+}
+
+.chat-message.received {
+  background: #6c757d;
+  text-align: left;
+}
+
+.chat-input {
+  display: flex;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 5px;
+  border: none;
+  border-radius: 4px;
+  margin-right: 5px;
+}
+
+.chat-input button {
+  padding: 5px 10px;
+}
+
+/* Control buttons */
+.control-buttons {
+  margin-top: 20px;
+}
+
+.control-buttons button {
+  margin-right: 10px;
 }
