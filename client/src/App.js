@@ -63,7 +63,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Once both partnerId and myId are set, start the video chat if we haven't already.
     if (partnerId && myId && !peerRef.current) {
       const initiator = myId < partnerId;
       startVideoChat(initiator);
@@ -160,44 +159,45 @@ function App() {
           <p>Connect based on interests</p>
         </div>
 
-        {/* If no partner, show partner search; otherwise, show chat box */}
-        {!partnerId && (
-          <div className="partner-search">
-            <input
-              type="text"
-              value={interests}
-              onChange={(e) => setInterests(e.target.value)}
-              placeholder="Enter interests (optional)"
-              className="form-control"
-            />
-            <button onClick={findPartner} disabled={searching} className="btn btn-primary mt-3">
-              {searching ? "Searching..." : "Find a Partner"}
-            </button>
-          </div>
-        )}
-
-        {partnerId && (
-          <div className="chat-box">
-            <div className="chat-messages">
-              {messages.map((msg, index) => (
-                <div key={index} className={`chat-message ${msg.sender === "you" ? "sent" : "received"}`}>
-                  {msg.text}
-                </div>
-              ))}
-            </div>
-            <div className="chat-input">
+        <div className="sidebar-content">
+          {!partnerId && (
+            <div className="partner-search">
               <input
                 type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..."
+                value={interests}
+                onChange={(e) => setInterests(e.target.value)}
+                placeholder="Enter interests (optional)"
+                className="form-control"
               />
-              <button onClick={sendMessage} className="btn btn-outline-light">
-                Send
+              <button onClick={findPartner} disabled={searching} className="btn btn-primary mt-3">
+                {searching ? "Searching..." : "Find a Partner"}
               </button>
             </div>
-          </div>
-        )}
+          )}
+
+          {partnerId && (
+            <div className="chat-box">
+              <div className="chat-messages">
+                {messages.map((msg, index) => (
+                  <div key={index} className={`chat-message ${msg.sender === "you" ? "sent" : "received"}`}>
+                    {msg.text}
+                  </div>
+                ))}
+              </div>
+              <div className="chat-input">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                />
+                <button onClick={sendMessage} className="btn btn-outline-light">
+                  Send
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main content */}
@@ -214,7 +214,6 @@ function App() {
               <p>{commonInterests.length > 0 ? commonInterests.join(", ") : "None"}</p>
             </div>
 
-            {/* Larger Next/Disconnect buttons below the video */}
             <div className="control-buttons-bottom">
               <button onClick={() => window.location.reload()} className="btn btn-danger btn-lg">
                 Disconnect

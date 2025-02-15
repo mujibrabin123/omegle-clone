@@ -12,10 +12,10 @@
   width: 300px;
   background: #2c2c2c; /* A dark grey color */
   color: #fff;
-  padding: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  padding: 20px;
+  overflow-y: auto; /* allow scrolling if content is too tall */
 }
 
 .sidebar .branding h2 {
@@ -28,15 +28,20 @@
   margin: 5px 0 20px;
 }
 
+/* This container helps push the chat box or search to the bottom */
+.sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* pins partner-search or chat-box to bottom */
+}
+
+/* Partner search form */
 .partner-search {
   width: 100%;
 }
 
-.partner-search .form-control {
-  width: 100%;
-}
-
-/* Chat box within the sidebar */
+/* Chat box in the sidebar */
 .chat-box {
   width: 100%;
   background: #3c3c3c;
@@ -45,11 +50,13 @@
   color: #fff;
   font-size: 1rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  max-height: 350px; /* limit height so the input is visible */
 }
 
 .chat-messages {
-  height: 200px;
+  flex: 1; /* fill remaining space */
   overflow-y: auto;
   margin-bottom: 10px;
   font-size: 0.95rem;
@@ -150,25 +157,20 @@
 @media (max-width: 768px) {
   .app-wrapper {
     flex-direction: column;
+    height: auto; /* let content expand */
   }
   .sidebar {
     width: 100%;
-    padding: 15px;
-    flex-direction: row;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: flex-start;
+    height: auto;
   }
-  .sidebar .branding {
-    text-align: left;
+  .sidebar-content {
+    width: 100%;
   }
-  .partner-search {
-    width: 40%;
-    margin: 0;
-  }
+  /* Chat box grows if needed, but user can scroll in the sidebar */
   .chat-box {
-    width: 55%;
-    margin-top: 0;
-    margin-left: 5%;
+    max-height: none;
   }
   .main-content {
     padding: 10px;
@@ -179,6 +181,6 @@
     aspect-ratio: 16/9;
   }
   .control-buttons-bottom {
-    flex-direction: column;
+    flex-direction: column; /* stack buttons vertically on mobile */
   }
 }
