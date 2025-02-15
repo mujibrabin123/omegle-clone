@@ -12,7 +12,6 @@ function App() {
   const [commonInterests, setCommonInterests] = useState([]);
   const [stream, setStream] = useState(null);
   const [partnerStream, setPartnerStream] = useState(null);
-  // Capture our own socket ID.
   const [myId, setMyId] = useState("");
   
   // Chat state.
@@ -52,7 +51,6 @@ function App() {
       alert("Your chat partner has disconnected.");
     });
     
-    // Listen for incoming chat messages.
     socket.on("receiveMessage", (message) => {
       setMessages((prev) => [...prev, { sender: "partner", text: message }]);
     });
@@ -66,7 +64,7 @@ function App() {
     };
   }, []);
 
-  // When both our socket ID and the partner's ID are available, start the video chat.
+  // Start video chat when both our socket ID and partner's ID are available.
   useEffect(() => {
     if (partnerId && myId && !peerRef.current) {
       const initiator = myId < partnerId;
@@ -83,20 +81,27 @@ function App() {
     socket.emit("findPartner", interestList);
   };
 
-  // Updated startVideoChat: Using trickle disabled and forcing relay via iceTransportPolicy.
+  // startVideoChat: enhanced audio constraints, mute local video, set remote volume.
   const startVideoChat = async (initiator) => {
     try {
       const userStream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,
+          channelCount: 2,
+        }
       });
       setStream(userStream);
       if (userVideo.current) {
         userVideo.current.srcObject = userStream;
+        userVideo.current.muted = true; // Mute local preview so you don't hear yourself.
       }
       const peer = new SimplePeer({
         initiator,
-        trickle: false, // Disable trickle ICE
+        trickle: false, // Disable trickle ICE for reliability.
         stream: userStream,
         config: {
           iceServers: [
@@ -107,7 +112,7 @@ function App() {
               credential: "muazkh"
             }
           ],
-          iceTransportPolicy: "relay"  // Force relay (TURN) if necessary.
+          iceTransportPolicy: "relay" // Force relay (TURN) if necessary.
         },
       });
       peer.on("signal", (signal) => {
@@ -117,6 +122,8 @@ function App() {
         setPartnerStream(remoteStream);
         if (partnerVideo.current) {
           partnerVideo.current.srcObject = remoteStream;
+          partnerVideo.current.muted = false;
+          partnerVideo.current.volume = 1.0;
         }
       });
       peer.on("error", (err) => console.error("Peer error:", err));
