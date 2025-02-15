@@ -2,7 +2,7 @@ app = "omegle-clone"
 
 [build]
   # This tells Fly.io to use a Node.js environment
-  image = "node:16"  # Replace with your desired Node.js version if needed
+  image = "node:22"  # Change to the version you're using
 
 [env]
   PORT = "3000"  # Make sure this is the same port your app uses
