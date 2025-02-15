@@ -32,7 +32,7 @@ function App() {
       setSearching(false);
     });
 
-    socket.on("signal", ({ signal, from }) => {
+    socket.on("signal", ({ signal }) => {
       if (peerRef.current) {
         peerRef.current.signal(signal);
       }
@@ -63,6 +63,7 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Once both partnerId and myId are set, start the video chat if we haven't already.
     if (partnerId && myId && !peerRef.current) {
       const initiator = myId < partnerId;
       startVideoChat(initiator);
@@ -123,9 +124,6 @@ function App() {
           };
         }
       });
-      peer.on("error", (err) => console.error("Peer error:", err));
-      peer.on("iceStateChange", (state) => console.log("ICE state:", state));
-      peer.on("connect", () => console.log("Peer connected!"));
       peerRef.current = peer;
     } catch (err) {
       console.error("Error accessing media devices:", err);
@@ -155,11 +153,14 @@ function App() {
 
   return (
     <div className="app-wrapper">
+      {/* Sidebar */}
       <div className="sidebar">
         <div className="branding">
           <h2>link UP</h2>
           <p>Connect based on interests</p>
         </div>
+
+        {/* If no partner, show partner search; otherwise, show chat box */}
         {!partnerId && (
           <div className="partner-search">
             <input
@@ -174,45 +175,53 @@ function App() {
             </button>
           </div>
         )}
+
+        {partnerId && (
+          <div className="chat-box">
+            <div className="chat-messages">
+              {messages.map((msg, index) => (
+                <div key={index} className={`chat-message ${msg.sender === "you" ? "sent" : "received"}`}>
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+            <div className="chat-input">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+              />
+              <button onClick={sendMessage} className="btn btn-outline-light">
+                Send
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Main content */}
       <div className="main-content">
         {partnerId ? (
           <>
             <div className="video-container">
               <video ref={partnerVideo} autoPlay playsInline className="partner-video" />
               <video ref={userVideo} autoPlay playsInline className="user-video-overlay" />
-              <div className="control-buttons-overlay">
-                <button onClick={() => window.location.reload()} className="btn btn-danger btn-lg">
-                  Disconnect
-                </button>
-                <button onClick={nextPartner} className="btn btn-warning btn-lg">
-                  Next
-                </button>
-              </div>
             </div>
+
             <div className="common-interests">
               <h4>Common Interests:</h4>
               <p>{commonInterests.length > 0 ? commonInterests.join(", ") : "None"}</p>
             </div>
-            <div className="chat-box">
-              <div className="chat-messages">
-                {messages.map((msg, index) => (
-                  <div key={index} className={`chat-message ${msg.sender === "you" ? "sent" : "received"}`}>
-                    {msg.text}
-                  </div>
-                ))}
-              </div>
-              <div className="chat-input">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                />
-                <button onClick={sendMessage} className="btn btn-outline-light">
-                  Send
-                </button>
-              </div>
+
+            {/* Larger Next/Disconnect buttons below the video */}
+            <div className="control-buttons-bottom">
+              <button onClick={() => window.location.reload()} className="btn btn-danger btn-lg">
+                Disconnect
+              </button>
+              <button onClick={nextPartner} className="btn btn-warning btn-lg">
+                Next
+              </button>
             </div>
           </>
         ) : (
