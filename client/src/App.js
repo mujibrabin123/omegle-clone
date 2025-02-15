@@ -50,7 +50,7 @@ function App() {
       setPartnerStream(null);
       alert("Your chat partner has disconnected.");
     });
-    
+
     socket.on("receiveMessage", (message) => {
       setMessages((prev) => [...prev, { sender: "partner", text: message }]);
     });
@@ -112,7 +112,7 @@ function App() {
               credential: "muazkh",
             },
           ],
-          // Removed iceTransportPolicy so that a direct connection via STUN is attempted first.
+          // Removed iceTransportPolicy to allow direct connection via STUN when possible.
         },
       });
       peer.on("signal", (signal) => {
