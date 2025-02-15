@@ -1,10 +1,10 @@
 app = "omegle-clone"
 
 [build]
-  dockerfile = "Dockerfile"  # Pointing to the Dockerfile in the root
+  dockerfile = "Dockerfile"  # Assuming Dockerfile is at the root level.
 
 [env]
   NODE_ENV = "production"
 
 [deploy]
-  release_command = "npm install --production --prefix server"
+  release_command = "npm install --production"
