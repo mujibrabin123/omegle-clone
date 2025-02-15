@@ -3,7 +3,7 @@ import io from "socket.io-client";
 import SimplePeer from "simple-peer";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const socket = io("http://localhost:5000");
+const socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5000");
 
 function App() {
   const [partnerId, setPartnerId] = useState(null);

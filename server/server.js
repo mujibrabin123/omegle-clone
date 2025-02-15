@@ -13,7 +13,7 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Store waiting users along with their interests.
 let waitingUsers = [];
@@ -99,6 +99,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
