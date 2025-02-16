@@ -23,22 +23,26 @@ function App() {
 
   useEffect(() => {
     socket.on("connect", () => {
+      console.log("Connected with ID:", socket.id);
       setMyId(socket.id);
     });
 
     socket.on("partnerFound", ({ partnerId, commonInterests }) => {
+      console.log("Partner found:", partnerId, commonInterests);
       setPartnerId(partnerId);
       setCommonInterests(commonInterests);
       setSearching(false);
     });
 
     socket.on("signal", ({ signal }) => {
+      console.log("Signal received:", signal);
       if (peerRef.current) {
         peerRef.current.signal(signal);
       }
     });
 
     socket.on("partnerDisconnected", () => {
+      console.log("Partner disconnected");
       setPartnerId(null);
       setCommonInterests([]);
       if (peerRef.current) {
@@ -50,6 +54,7 @@ function App() {
     });
 
     socket.on("receiveMessage", (message) => {
+      console.log("Message received:", message);
       setMessages((prev) => [...prev, { sender: "partner", text: message }]);
     });
 
@@ -65,6 +70,7 @@ function App() {
   useEffect(() => {
     if (partnerId && myId && !peerRef.current) {
       const initiator = myId < partnerId;
+      console.log("Starting video chat. Initiator:", initiator);
       startVideoChat(initiator);
     }
   }, [partnerId, myId]);
@@ -74,9 +80,11 @@ function App() {
     const interestList = interests.trim()
       ? interests.split(",").map((i) => i.trim().toLowerCase())
       : [];
+    console.log("Finding partner with interests:", interestList);
     socket.emit("findPartner", interestList);
   };
 
+  // Updated startVideoChat: using your Coturn TURN server configuration.
   const startVideoChat = async (initiator) => {
     try {
       const userStream = await navigator.mediaDevices.getUserMedia({
@@ -92,30 +100,36 @@ function App() {
       setStream(userStream);
       if (userVideo.current) {
         userVideo.current.srcObject = userStream;
-        userVideo.current.muted = true;
+        userVideo.current.muted = true; // Mute local preview.
       }
       const peer = new SimplePeer({
         initiator,
-        trickle: false,
+        trickle: false, // Disable trickle ICE.
         stream: userStream,
         config: {
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
-            {
-              urls: "turn:numb.viagenie.ca",
-              username: "webrtc@live.com",
-              credential: "muazkh",
-            },
+            { 
+              urls: "turn:linkup-snowy-chi.vercel.app:3478?transport=udp",
+              username: "mujib.rabin",
+              credential: "rabin"
+            }
           ],
+          // Optionally, you can force relay if needed:
+          // iceTransportPolicy: "relay"
         },
       });
       peer.on("signal", (signal) => {
+        console.log("Sending signal:", signal);
         socket.emit("signal", { partnerId, signal });
       });
       peer.on("stream", (remoteStream) => {
+        console.log("Remote stream received. Audio tracks:", remoteStream.getAudioTracks().length);
         setPartnerStream(remoteStream);
         if (partnerVideo.current) {
           partnerVideo.current.srcObject = remoteStream;
+          partnerVideo.current.muted = false;
+          partnerVideo.current.volume = 1.0;
           partnerVideo.current.onloadedmetadata = () => {
             partnerVideo.current.play().catch((err) =>
               console.error("Error playing remote stream:", err)
@@ -123,6 +137,9 @@ function App() {
           };
         }
       });
+      peer.on("error", (err) => console.error("Peer error:", err));
+      peer.on("iceStateChange", (state) => console.log("ICE state:", state));
+      peer.on("connect", () => console.log("Peer connected!"));
       peerRef.current = peer;
     } catch (err) {
       console.error("Error accessing media devices:", err);
