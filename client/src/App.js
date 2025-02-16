@@ -84,7 +84,6 @@ function App() {
     socket.emit("findPartner", interestList);
   };
 
-  // Updated startVideoChat: using your Coturn TURN server configuration.
   const startVideoChat = async (initiator) => {
     try {
       const userStream = await navigator.mediaDevices.getUserMedia({
@@ -115,7 +114,7 @@ function App() {
               credential: "rabin"
             }
           ],
-          // Optionally, you can force relay if needed:
+          // Optionally force relay if needed:
           // iceTransportPolicy: "relay"
         },
       });
