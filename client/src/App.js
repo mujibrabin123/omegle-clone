@@ -4,6 +4,7 @@ import SimplePeer from "simple-peer";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
+// Connect to your signaling server.
 const socket = io("https://server-crimson-wildflower-4430.fly.dev");
 
 function App() {
@@ -86,6 +87,7 @@ function App() {
 
   const startVideoChat = async (initiator) => {
     try {
+      // Get video and audio stream with enhanced audio constraints.
       const userStream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: {
@@ -101,21 +103,21 @@ function App() {
         userVideo.current.srcObject = userStream;
         userVideo.current.muted = true; // Mute local preview.
       }
+      // Create the peer connection with your TURN server.
       const peer = new SimplePeer({
         initiator,
-        trickle: false, // Disable trickle ICE.
+        trickle: false, // Disable trickle ICE for reliability.
         stream: userStream,
         config: {
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
-            { 
-              urls: "turn:linkup-snowy-chi.vercel.app:3478?transport=udp",
+            {
+              urls: "turn:35.232.251.11:3478?transport=udp",
               username: "mujib.rabin",
-              credential: "rabin"
-            }
+              credential: "rabin",
+            },
           ],
-          // Optionally force relay if needed:
-          // iceTransportPolicy: "relay"
+          // You can force relay by setting: iceTransportPolicy: "relay"
         },
       });
       peer.on("signal", (signal) => {
@@ -174,7 +176,6 @@ function App() {
           <h2>link UP</h2>
           <p>Connect based on interests</p>
         </div>
-
         <div className="sidebar-content">
           {!partnerId && (
             <div className="partner-search">
@@ -190,7 +191,6 @@ function App() {
               </button>
             </div>
           )}
-
           {partnerId && (
             <div className="chat-box">
               <div className="chat-messages">
@@ -215,7 +215,6 @@ function App() {
           )}
         </div>
       </div>
-
       {/* Main content */}
       <div className="main-content">
         {partnerId ? (
@@ -224,12 +223,10 @@ function App() {
               <video ref={partnerVideo} autoPlay playsInline className="partner-video" />
               <video ref={userVideo} autoPlay playsInline className="user-video-overlay" />
             </div>
-
             <div className="common-interests">
               <h4>Common Interests:</h4>
               <p>{commonInterests.length > 0 ? commonInterests.join(", ") : "None"}</p>
             </div>
-
             <div className="control-buttons-bottom">
               <button onClick={() => window.location.reload()} className="btn btn-danger btn-lg">
                 Disconnect
