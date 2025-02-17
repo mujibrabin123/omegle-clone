@@ -186,11 +186,9 @@ function App() {
     // Toggle between "user" (front) and "environment" (back)
     const newFacing = cameraFacing === "user" ? "environment" : "user";
     setCameraFacing(newFacing);
-    // Stop current local stream if any
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
     }
-    // Restart the video chat with the new facing mode
     if (partnerId) {
       await startVideoChat(myId < partnerId);
     } else {
