@@ -1,10 +1,11 @@
-/* Remove default margins/padding and set background to match your app */
+/* Remove default margins/padding, set background and disable scrolling */
 html, body {
   margin: 0;
   padding: 0;
   background: #000;
   height: 100%;
   width: 100%;
+  overflow: hidden;
 }
 
 /* Ensure #root and .app-wrapper fill the screen */
@@ -187,6 +188,7 @@ html, body {
 
 .chat-overlay.active {
   display: flex;
+  z-index: 3;
 }
 
 /* Chat toggle button (visible only on mobile) */
@@ -201,6 +203,21 @@ html, body {
   padding: 8px 12px;
   border-radius: 4px;
   display: none;
+}
+
+/* Switch camera icon style */
+.switch-camera {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  padding: 5px;
+  border-radius: 50%;
+  cursor: pointer;
 }
 
 /* 
@@ -268,7 +285,7 @@ html, body {
     left: 50%;
     transform: translateX(-50%);
     gap: 10px;
-    z-index: 2;
+    z-index: 1;
     background: transparent;
   }
   .control-buttons-bottom button {
@@ -286,5 +303,11 @@ html, body {
   .chat-overlay .chat-message.sent,
   .chat-overlay .chat-message.received {
     background: transparent;
+  }
+  /* Position the switch camera icon in the upper-left of the host video area */
+  .switch-camera {
+    top: calc(50% + 10px);
+    left: 10px;
+    right: auto;
   }
 }

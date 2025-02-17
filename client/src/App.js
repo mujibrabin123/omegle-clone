@@ -4,7 +4,7 @@ import SimplePeer from "simple-peer";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
-// Import the server URL from the configuration file
+// Use your server URL.
 const socket = io("https://server-crimson-wildflower-4430.fly.dev");
 
 function App() {
@@ -19,6 +19,10 @@ function App() {
   const [newMessage, setNewMessage] = useState("");
   // State for toggling the chat overlay on mobile
   const [showChat, setShowChat] = useState(false);
+  // State for camera facing: "user" (front) or "environment" (back)
+  const [cameraFacing, setCameraFacing] = useState("user");
+  // Ref to track if disconnect is triggered by a Next action
+  const skipDisconnectAlertRef = useRef(false);
 
   const userVideo = useRef();
   const partnerVideo = useRef();
@@ -46,6 +50,11 @@ function App() {
 
     socket.on("partnerDisconnected", () => {
       console.log("Partner disconnected");
+      if (skipDisconnectAlertRef.current) {
+        skipDisconnectAlertRef.current = false;
+      } else {
+        alert("Your chat partner has disconnected.");
+      }
       setPartnerId(null);
       setCommonInterests([]);
       if (peerRef.current) {
@@ -53,18 +62,12 @@ function App() {
         peerRef.current = null;
       }
       setPartnerStream(null);
-      alert("Your chat partner has disconnected.");
+      findPartner();
     });
 
     socket.on("receiveMessage", (message) => {
       console.log("Message received:", message);
       setMessages((prev) => [...prev, { sender: "partner", text: message }]);
-    });
-    
-    // NEW: When the remote side clicks Next, automatically search for a new partner.
-    socket.on("nextPartner", () => {
-      console.log("Remote side clicked Next. Searching for a new partner.");
-      findPartner();
     });
 
     return () => {
@@ -73,7 +76,6 @@ function App() {
       socket.off("signal");
       socket.off("partnerDisconnected");
       socket.off("receiveMessage");
-      socket.off("nextPartner");
     };
   }, []);
 
@@ -83,7 +85,7 @@ function App() {
       console.log("Starting video chat. Initiator:", initiator);
       startVideoChat(initiator);
     }
-  }, [partnerId, myId]);
+  }, [partnerId, myId, cameraFacing]);
 
   const findPartner = () => {
     setSearching(true);
@@ -96,9 +98,8 @@ function App() {
 
   const startVideoChat = async (initiator) => {
     try {
-      // Get video and audio stream with enhanced audio constraints.
       const userStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: { facingMode: cameraFacing },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -110,12 +111,13 @@ function App() {
       setStream(userStream);
       if (userVideo.current) {
         userVideo.current.srcObject = userStream;
-        userVideo.current.muted = true; // Mute local preview.
+        // Show local video in normal (non-mirrored) mode.
+        userVideo.current.style.transform = "scaleX(1)";
+        userVideo.current.muted = true;
       }
-      // Create the peer connection with your TURN server.
       const peer = new SimplePeer({
         initiator,
-        trickle: false, // Disable trickle ICE for reliability.
+        trickle: false,
         stream: userStream,
         config: {
           iceServers: [
@@ -166,7 +168,7 @@ function App() {
   };
 
   const nextPartner = () => {
-    // Clear the current partner and peer connection
+    skipDisconnectAlertRef.current = true;
     setPartnerId(null);
     setCommonInterests([]);
     setPartnerStream(null);
@@ -176,14 +178,27 @@ function App() {
       peerRef.current.destroy();
       peerRef.current = null;
     }
-    // Inform the server that we want to look for a new partner
     socket.emit("nextPartner");
-    // Start searching immediately on this side
     findPartner();
   };
 
+  const toggleCamera = async () => {
+    // Toggle between "user" (front) and "environment" (back)
+    const newFacing = cameraFacing === "user" ? "environment" : "user";
+    setCameraFacing(newFacing);
+    // Stop current local stream if any
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    // Restart the video chat with the new facing mode
+    if (partnerId) {
+      await startVideoChat(myId < partnerId);
+    } else {
+      await startVideoChat(true);
+    }
+  };
+
   return (
-    // Dynamically add "video-active" if a partner is set, "no-partner" otherwise.
     <div className={`app-wrapper ${partnerId ? "video-active" : "no-partner"}`}>
       {/* Sidebar (visible when no partner is set) */}
       <div className="sidebar">
@@ -278,10 +293,20 @@ function App() {
               </p>
             </div>
             <div className="control-buttons-bottom">
+              <button
+                onClick={() => window.location.reload()}
+                className="btn btn-danger btn-lg"
+              >
+                Disconnect
+              </button>
               <button onClick={nextPartner} className="btn btn-warning btn-lg">
                 Next
               </button>
             </div>
+            {/* Small transparent switch camera icon */}
+            <button className="switch-camera" onClick={toggleCamera}>
+              &#8635;
+            </button>
             {/* Chat toggle button (visible on mobile via CSS) */}
             <button
               className="chat-toggle"
