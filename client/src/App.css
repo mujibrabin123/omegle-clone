@@ -1,31 +1,23 @@
-/* Use safe-area insets and dynamic viewport height */
+/* Remove default margins/padding and set background */
 html, body {
   margin: 0;
   padding: 0;
   background: #000;
   width: 100%;
-  /* Allow content to adjust with safe areas */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* Let the browser handle scrolling and safe areas */
 }
 
 /* Ensure #root and .app-wrapper fill the screen */
 #root, .app-wrapper {
   width: 100%;
-  /* Use dynamic viewport height if supported */
-  height: 100vh;
-}
-
-@supports (height: 100dvh) {
-  #root, .app-wrapper {
-    height: 100dvh;
-  }
+  min-height: 100vh;
 }
 
 /* Overall layout */
 .app-wrapper {
   display: flex;
-  overflow: hidden;
+  min-height: 100vh;
+  /* No forced overflow hidden on the html/body to allow safe-area adjustments */
 }
 
 /* Sidebar styling */
@@ -36,7 +28,7 @@ html, body {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  overflow-y: auto; 
+  overflow-y: auto;
 }
 
 .sidebar .branding h2 {
@@ -55,7 +47,7 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  align-items: flex-start; 
+  align-items: flex-start;
 }
 
 /* Partner search form */
@@ -76,7 +68,7 @@ html, body {
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
   display: flex;
   flex-direction: column;
-  max-height: 350px; 
+  max-height: 350px;
 }
 
 .chat-messages {
@@ -130,7 +122,8 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* Account for safe-area insets */
+  padding: 20px;
+  /* Account for safe area insets */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -258,7 +251,7 @@ html, body {
   /* Expand main content to full screen */
   .main-content {
     width: 100%;
-    height: 100vh;
+    min-height: 100vh;
     padding: 0;
     position: relative;
   }
