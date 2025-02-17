@@ -241,7 +241,7 @@ function App() {
       {/* Sidebar (visible when no partner is set) */}
       <div className="sidebar">
         <div className="branding">
-          <h2>link UP</h2>
+          <h2>TALKVEE</h2>
           <p>Connect based on interests</p>
         </div>
         <div className="sidebar-content">
@@ -357,8 +357,8 @@ function App() {
           </>
         ) : (
           <div className="welcome-message">
-            <h3>Welcome to link UP</h3>
-            <p>Enter your interests and find a chat partner instantly.</p>
+            <h3>Welcome to TALKVEE</h3>
+            <p>MAY CONTAIN WEIRD BUT FUN PEOPLE.</p>
           </div>
         )}
       </div>
