@@ -28,6 +28,17 @@ function App() {
   const partnerVideo = useRef();
   const peerRef = useRef(null);
 
+  // Set the --vh CSS variable to handle dynamic viewport height on mobile
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    setVh();
+    window.addEventListener('resize', setVh);
+    return () => window.removeEventListener('resize', setVh);
+  }, []);
+
   useEffect(() => {
     socket.on("connect", () => {
       console.log("Connected with ID:", socket.id);
@@ -301,7 +312,7 @@ function App() {
                 Next
               </button>
             </div>
-            {/* Small transparent switch camera icon */}
+            {/* Small transparent switch camera icon in host area */}
             <button className="switch-camera" onClick={toggleCamera}>
               &#8635;
             </button>

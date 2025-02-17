@@ -1,10 +1,14 @@
+:root {
+  --vh: 1vh;
+}
+
 /* Remove default margins/padding and set background */
 html, body {
   margin: 0;
   padding: 0;
   background: #000;
   width: 100%;
-  /* Let the browser handle scrolling and safe areas */
+  /* Let browser handle safe areas */
 }
 
 /* Ensure #root and .app-wrapper fill the screen */
@@ -17,7 +21,7 @@ html, body {
 .app-wrapper {
   display: flex;
   min-height: 100vh;
-  /* No forced overflow hidden on the html/body to allow safe-area adjustments */
+  overflow: hidden;
 }
 
 /* Sidebar styling */
@@ -123,7 +127,6 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  /* Account for safe area insets */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -175,7 +178,7 @@ html, body {
 /* Chat overlay for mobile (hidden by default) */
 .chat-overlay {
   position: absolute;
-  bottom: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 0px);
   left: 0;
   width: 100%;
   max-height: 40%;
@@ -196,7 +199,7 @@ html, body {
 /* Chat toggle button (visible only on mobile) */
 .chat-toggle {
   position: absolute;
-  top: 10px;
+  top: calc(env(safe-area-inset-top) + 10px);
   right: 10px;
   z-index: 3;
   background: rgba(0,0,0,0.5);
@@ -213,7 +216,7 @@ html, body {
   top: 10px;
   right: 10px;
   z-index: 4;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0,0,0,0.3);
   border: none;
   color: #fff;
   font-size: 1.5rem;
@@ -236,7 +239,7 @@ html, body {
     width: 100%;
     padding: 20px;
   }
-  /* When video chat is active, hide the sidebar (force with !important) */
+  /* When video chat is active, hide the sidebar */
   .app-wrapper.video-active .sidebar {
     display: none !important;
   }
@@ -244,33 +247,33 @@ html, body {
   .chat-toggle {
     display: block;
   }
-  /* Make the app-wrapper stack vertically */
+  /* Stack app-wrapper vertically */
   .app-wrapper {
     flex-direction: column;
   }
-  /* Expand main content to full screen */
+  /* Use the dynamic viewport height variable for main content */
   .main-content {
     width: 100%;
-    min-height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
     padding: 0;
     position: relative;
   }
-  /* Split the video container vertically */
+  /* Video container fills main content */
   .video-container {
+    height: calc(var(--vh, 1vh) * 100);
     display: flex;
     flex-direction: column;
-    height: 100%;
     max-width: 100%;
     border-radius: 0;
   }
-  /* Top half: partner video */
+  /* Top half: partner video (50% of video container) */
   .partner-video {
     flex: 1;
     width: 100%;
     height: 50%;
     object-fit: cover;
   }
-  /* Bottom half: host video (using user-video-overlay) */
+  /* Bottom half: host video (50% of video container) */
   .user-video-overlay {
     position: relative;
     flex: 1;
@@ -280,10 +283,10 @@ html, body {
     border-top: 2px solid #fff;
     object-fit: cover;
   }
-  /* Overlay control buttons on the host video */
+  /* Position control buttons above the safe area */
   .control-buttons-bottom {
     position: absolute;
-    bottom: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
     gap: 10px;
@@ -291,7 +294,7 @@ html, body {
     background: transparent;
   }
   .control-buttons-bottom button {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0,0,0,0.5);
     border: none;
     color: #fff;
     padding: 8px 16px;
@@ -301,7 +304,7 @@ html, body {
   .common-interests {
     display: none;
   }
-  /* Make chat messages inside the chat overlay fully transparent */
+  /* Make chat messages inside chat overlay fully transparent */
   .chat-overlay .chat-message.sent,
   .chat-overlay .chat-message.received {
     background: transparent;
