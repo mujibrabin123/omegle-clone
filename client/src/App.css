@@ -1,4 +1,17 @@
-/* App.css */
+/* Remove default margins/padding and set background to match your app */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  height: 100%;
+  width: 100%;
+}
+
+/* Ensure #root and .app-wrapper fill the screen */
+#root, .app-wrapper {
+  height: 100%;
+  width: 100%;
+}
 
 /* Overall layout */
 .app-wrapper {
@@ -7,15 +20,15 @@
   overflow: hidden;
 }
 
-/* Sidebar styling (left side) */
+/* Sidebar styling */
 .sidebar {
   width: 300px;
-  background: #2c2c2c; /* A dark grey color */
+  background: #2c2c2c;
   color: #fff;
   display: flex;
   flex-direction: column;
   padding: 20px;
-  overflow-y: auto; /* allow scrolling if content is too tall */
+  overflow-y: auto; 
 }
 
 .sidebar .branding h2 {
@@ -45,7 +58,7 @@
 /* Chat box in the sidebar */
 .chat-box {
   width: 100%;
-  max-width: 260px; /* or 280px—adjust to taste */
+  max-width: 260px;
   box-sizing: border-box;
   background: #3c3c3c;
   padding: 15px;
@@ -55,11 +68,11 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  max-height: 350px;  /* limit height so the input is visible */
+  max-height: 350px; 
 }
 
 .chat-messages {
-  flex: 1; /* fill remaining space */
+  flex: 1;
   overflow-y: auto;
   margin-bottom: 10px;
   font-size: 0.95rem;
@@ -100,7 +113,7 @@
   font-size: 1rem;
 }
 
-/* Main content styling (right side) */
+/* Main content */
 .main-content {
   flex: 1;
   position: relative;
@@ -112,7 +125,7 @@
   padding: 20px;
 }
 
-/* Video container with user overlay */
+/* Video container */
 .video-container {
   position: relative;
   width: 100%;
@@ -163,7 +176,7 @@
   left: 0;
   width: 100%;
   max-height: 40%;
-  background: rgba(0, 0, 0, 0.3); /* Semi-transparent so video remains visible */
+  background: rgba(0, 0, 0, 0.3);
   color: #fff;
   display: none;
   flex-direction: column;
@@ -172,7 +185,6 @@
   overflow-y: auto;
 }
 
-/* When active, display the chat overlay */
 .chat-overlay.active {
   display: flex;
 }
@@ -191,17 +203,29 @@
   display: none;
 }
 
+/* 
+  The app-wrapper gets:
+  - "no-partner" class if there's no partner (sidebar visible in mobile).
+  - "video-active" if a partner is set (sidebar hidden in mobile).
+*/
+
 /* Responsive styling for mobile */
 @media (max-width: 768px) {
-  /* Hide the sidebar for full-screen video experience */
-  .sidebar {
-    display: none;
+  /* If no partner is set, show the sidebar */
+  .app-wrapper.no-partner .sidebar {
+    display: block;
+    width: 100%;
+    padding: 20px;
+  }
+  /* When video chat is active, hide the sidebar (force with !important) */
+  .app-wrapper.video-active .sidebar {
+    display: none !important;
   }
   /* Show the chat toggle button on mobile */
   .chat-toggle {
     display: block;
   }
-  /* Make the app wrapper stack vertically */
+  /* Make the app-wrapper stack vertically */
   .app-wrapper {
     flex-direction: column;
   }
@@ -212,7 +236,7 @@
     padding: 0;
     position: relative;
   }
-  /* Split the video container into two halves vertically */
+  /* Split the video container vertically */
   .video-container {
     display: flex;
     flex-direction: column;
@@ -227,7 +251,7 @@
     height: 50%;
     object-fit: cover;
   }
-  /* Bottom half: host video (using the user-video-overlay element) */
+  /* Bottom half: host video (using user-video-overlay) */
   .user-video-overlay {
     position: relative;
     flex: 1;
@@ -237,7 +261,7 @@
     border-top: 2px solid #fff;
     object-fit: cover;
   }
-  /* Overlay the control buttons on the host video (lower half) */
+  /* Overlay control buttons on the host video */
   .control-buttons-bottom {
     position: absolute;
     bottom: 20px;
@@ -248,7 +272,7 @@
     background: transparent;
   }
   .control-buttons-bottom button {
-    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    background: rgba(0, 0, 0, 0.5);
     border: none;
     color: #fff;
     padding: 8px 16px;
@@ -258,8 +282,7 @@
   .common-interests {
     display: none;
   }
-  
-  /* Make chat messages inside the chat overlay fully transparent (background) */
+  /* Make chat messages inside the chat overlay fully transparent */
   .chat-overlay .chat-message.sent,
   .chat-overlay .chat-message.received {
     background: transparent;

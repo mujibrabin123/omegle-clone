@@ -5,9 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 // Import the server URL from the configuration file
-import { SERVER_URL } from "./config";
-
-const socket = io(SERVER_URL);
+const socket = io("https://server-crimson-wildflower-4430.fly.dev");
 
 function App() {
   const [partnerId, setPartnerId] = useState(null);
@@ -19,7 +17,7 @@ function App() {
   const [myId, setMyId] = useState("");
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  // New state for toggling the chat overlay on mobile
+  // State for toggling the chat overlay on mobile
   const [showChat, setShowChat] = useState(false);
 
   const userVideo = useRef();
@@ -62,6 +60,12 @@ function App() {
       console.log("Message received:", message);
       setMessages((prev) => [...prev, { sender: "partner", text: message }]);
     });
+    
+    // NEW: When the remote side clicks Next, automatically search for a new partner.
+    socket.on("nextPartner", () => {
+      console.log("Remote side clicked Next. Searching for a new partner.");
+      findPartner();
+    });
 
     return () => {
       socket.off("connect");
@@ -69,6 +73,7 @@ function App() {
       socket.off("signal");
       socket.off("partnerDisconnected");
       socket.off("receiveMessage");
+      socket.off("nextPartner");
     };
   }, []);
 
@@ -121,7 +126,6 @@ function App() {
               credential: "rabin",
             },
           ],
-          // You can force relay by setting: iceTransportPolicy: "relay"
         },
       });
       peer.on("signal", (signal) => {
@@ -162,6 +166,7 @@ function App() {
   };
 
   const nextPartner = () => {
+    // Clear the current partner and peer connection
     setPartnerId(null);
     setCommonInterests([]);
     setPartnerStream(null);
@@ -171,13 +176,16 @@ function App() {
       peerRef.current.destroy();
       peerRef.current = null;
     }
+    // Inform the server that we want to look for a new partner
     socket.emit("nextPartner");
+    // Start searching immediately on this side
     findPartner();
   };
 
   return (
-    <div className="app-wrapper">
-      {/* Sidebar (desktop only) */}
+    // Dynamically add "video-active" if a partner is set, "no-partner" otherwise.
+    <div className={`app-wrapper ${partnerId ? "video-active" : "no-partner"}`}>
+      {/* Sidebar (visible when no partner is set) */}
       <div className="sidebar">
         <div className="branding">
           <h2>link UP</h2>
@@ -270,12 +278,6 @@ function App() {
               </p>
             </div>
             <div className="control-buttons-bottom">
-              <button
-                onClick={() => window.location.reload()}
-                className="btn btn-danger btn-lg"
-              >
-                Disconnect
-              </button>
               <button onClick={nextPartner} className="btn btn-warning btn-lg">
                 Next
               </button>
