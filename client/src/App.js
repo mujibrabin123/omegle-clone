@@ -17,26 +17,28 @@ function App() {
   const [myId, setMyId] = useState("");
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  // State for toggling the chat overlay on mobile
+  // State for toggling chat overlay on mobile
   const [showChat, setShowChat] = useState(false);
-  // State for camera facing: "user" (front) or "environment" (back)
+  // Camera facing: "user" (front) or "environment" (back)
   const [cameraFacing, setCameraFacing] = useState("user");
-  // Ref to track if disconnect is triggered by a Next action
+  // Ref to skip disconnect alert if Next is triggered
   const skipDisconnectAlertRef = useRef(false);
 
   const userVideo = useRef();
   const partnerVideo = useRef();
   const peerRef = useRef(null);
+  // Ref to store the local video sender for track replacement
+  const videoSenderRef = useRef(null);
 
-  // Set the --vh CSS variable to handle dynamic viewport height on mobile
+  // Set --vh variable to handle dynamic viewport height
   useEffect(() => {
     const setVh = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
     setVh();
-    window.addEventListener('resize', setVh);
-    return () => window.removeEventListener('resize', setVh);
+    window.addEventListener("resize", setVh);
+    return () => window.removeEventListener("resize", setVh);
   }, []);
 
   useEffect(() => {
@@ -66,13 +68,7 @@ function App() {
       } else {
         alert("Your chat partner has disconnected.");
       }
-      setPartnerId(null);
-      setCommonInterests([]);
-      if (peerRef.current) {
-        peerRef.current.destroy();
-        peerRef.current = null;
-      }
-      setPartnerStream(null);
+      cleanupCall();
       findPartner();
     });
 
@@ -109,7 +105,7 @@ function App() {
 
   const startVideoChat = async (initiator) => {
     try {
-      const userStream = await navigator.mediaDevices.getUserMedia({
+      const localStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: cameraFacing },
         audio: {
           echoCancellation: true,
@@ -119,9 +115,9 @@ function App() {
           channelCount: 2,
         },
       });
-      setStream(userStream);
+      setStream(localStream);
       if (userVideo.current) {
-        userVideo.current.srcObject = userStream;
+        userVideo.current.srcObject = localStream;
         // Show local video in normal (non-mirrored) mode.
         userVideo.current.style.transform = "scaleX(1)";
         userVideo.current.muted = true;
@@ -129,7 +125,7 @@ function App() {
       const peer = new SimplePeer({
         initiator,
         trickle: false,
-        stream: userStream,
+        stream: localStream,
         config: {
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
@@ -146,10 +142,7 @@ function App() {
         socket.emit("signal", { partnerId, signal });
       });
       peer.on("stream", (remoteStream) => {
-        console.log(
-          "Remote stream received. Audio tracks:",
-          remoteStream.getAudioTracks().length
-        );
+        console.log("Remote stream received. Audio tracks:", remoteStream.getAudioTracks().length);
         setPartnerStream(remoteStream);
         if (partnerVideo.current) {
           partnerVideo.current.srcObject = remoteStream;
@@ -162,13 +155,58 @@ function App() {
           };
         }
       });
+      peer.on("connect", () => {
+        console.log("Peer connected!");
+        const videoSender = peer._pc
+          .getSenders()
+          .find((s) => s.track && s.track.kind === "video");
+        videoSenderRef.current = videoSender || null;
+      });
       peer.on("error", (err) => console.error("Peer error:", err));
       peer.on("iceStateChange", (state) => console.log("ICE state:", state));
-      peer.on("connect", () => console.log("Peer connected!"));
       peerRef.current = peer;
     } catch (err) {
       console.error("Error accessing media devices:", err);
     }
+  };
+
+  // Replace the local video track without restarting the call
+  const replaceLocalTrack = async () => {
+    if (!peerRef.current) return;
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: cameraFacing },
+      audio: false,
+    });
+    const newVideoTrack = newStream.getVideoTracks()[0];
+    if (videoSenderRef.current && newVideoTrack) {
+      await videoSenderRef.current.replaceTrack(newVideoTrack);
+      if (userVideo.current) {
+        userVideo.current.srcObject = newStream;
+        userVideo.current.style.transform = "scaleX(1)";
+        userVideo.current.muted = true;
+      }
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      setStream(newStream);
+    }
+  };
+
+  const cleanupCall = () => {
+    setPartnerId(null);
+    setCommonInterests([]);
+    setPartnerStream(null);
+    setMessages([]);
+    setNewMessage("");
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+    videoSenderRef.current = null;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    setStream(null);
   };
 
   const sendMessage = () => {
@@ -180,29 +218,20 @@ function App() {
 
   const nextPartner = () => {
     skipDisconnectAlertRef.current = true;
-    setPartnerId(null);
-    setCommonInterests([]);
-    setPartnerStream(null);
-    setMessages([]);
-    setNewMessage("");
-    if (peerRef.current) {
-      peerRef.current.destroy();
-      peerRef.current = null;
-    }
+    cleanupCall();
     socket.emit("nextPartner");
     findPartner();
   };
 
   const toggleCamera = async () => {
-    // Toggle between "user" (front) and "environment" (back)
     const newFacing = cameraFacing === "user" ? "environment" : "user";
     setCameraFacing(newFacing);
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
-    if (partnerId) {
-      await startVideoChat(myId < partnerId);
+    if (peerRef.current) {
+      await replaceLocalTrack();
     } else {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
       await startVideoChat(true);
     }
   };
@@ -245,9 +274,7 @@ function App() {
                 {messages.map((msg, index) => (
                   <div
                     key={index}
-                    className={`chat-message ${
-                      msg.sender === "you" ? "sent" : "received"
-                    }`}
+                    className={`chat-message ${msg.sender === "you" ? "sent" : "received"}`}
                   >
                     {msg.text}
                   </div>
@@ -280,59 +307,34 @@ function App() {
         {partnerId ? (
           <>
             <div className="video-container">
-              <video
-                ref={partnerVideo}
-                autoPlay
-                playsInline
-                className="partner-video"
-              />
-              <video
-                ref={userVideo}
-                autoPlay
-                playsInline
-                className="user-video-overlay"
-              />
+              <video ref={partnerVideo} autoPlay playsInline className="partner-video" />
+              <video ref={userVideo} autoPlay playsInline className="user-video-overlay" />
             </div>
             <div className="common-interests">
               <h4>Common Interests:</h4>
-              <p>
-                {commonInterests.length > 0
-                  ? commonInterests.join(", ")
-                  : "None"}
-              </p>
+              <p>{commonInterests.length > 0 ? commonInterests.join(", ") : "None"}</p>
             </div>
             <div className="control-buttons-bottom">
-              <button
-                onClick={() => window.location.reload()}
-                className="btn btn-danger btn-lg"
-              >
+              <button onClick={() => window.location.reload()} className="btn btn-danger btn-lg">
                 Disconnect
               </button>
               <button onClick={nextPartner} className="btn btn-warning btn-lg">
                 Next
               </button>
             </div>
-            {/* Small transparent switch camera icon in host area */}
+            {/* Small transparent switch camera icon positioned on host area */}
             <button className="switch-camera" onClick={toggleCamera}>
               &#8635;
             </button>
             {/* Chat toggle button (visible on mobile via CSS) */}
-            <button
-              className="chat-toggle"
-              onClick={() => setShowChat((prev) => !prev)}
-            >
+            <button className="chat-toggle" onClick={() => setShowChat((prev) => !prev)}>
               {showChat ? "Hide Chat" : "Show Chat"}
             </button>
             {/* Chat overlay for mobile */}
             <div className={`chat-overlay ${showChat ? "active" : ""}`}>
               <div className="chat-messages">
                 {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`chat-message ${
-                      msg.sender === "you" ? "sent" : "received"
-                    }`}
-                  >
+                  <div key={index} className={`chat-message ${msg.sender === "you" ? "sent" : "received"}`}>
                     {msg.text}
                   </div>
                 ))}
