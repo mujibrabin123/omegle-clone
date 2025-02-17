@@ -33,7 +33,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end; /* pins partner-search or chat-box to bottom */
+  justify-content: flex-end;
+  align-items: flex-start; 
 }
 
 /* Partner search form */
@@ -44,6 +45,8 @@
 /* Chat box in the sidebar */
 .chat-box {
   width: 100%;
+  max-width: 260px; /* or 280px—adjust to taste */
+  box-sizing: border-box;
   background: #3c3c3c;
   padding: 15px;
   border-radius: 8px;
@@ -52,7 +55,7 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  max-height: 350px; /* limit height so the input is visible */
+  max-height: 350px;  /* limit height so the input is visible */
 }
 
 .chat-messages {
@@ -88,7 +91,7 @@
   padding: 8px;
   border: none;
   border-radius: 4px;
-  margin-right: 5px;
+  margin-right: 4px;
   font-size: 1rem;
 }
 
@@ -153,34 +156,112 @@
   justify-content: center;
 }
 
-/* Responsive styling */
+/* Chat overlay for mobile (hidden by default) */
+.chat-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-height: 40%;
+  background: rgba(0, 0, 0, 0.3); /* Semi-transparent so video remains visible */
+  color: #fff;
+  display: none;
+  flex-direction: column;
+  padding: 10px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* When active, display the chat overlay */
+.chat-overlay.active {
+  display: flex;
+}
+
+/* Chat toggle button (visible only on mobile) */
+.chat-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: none;
+}
+
+/* Responsive styling for mobile */
 @media (max-width: 768px) {
+  /* Hide the sidebar for full-screen video experience */
+  .sidebar {
+    display: none;
+  }
+  /* Show the chat toggle button on mobile */
+  .chat-toggle {
+    display: block;
+  }
+  /* Make the app wrapper stack vertically */
   .app-wrapper {
     flex-direction: column;
-    height: auto; /* let content expand */
   }
-  .sidebar {
-    width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
-    height: auto;
-  }
-  .sidebar-content {
-    width: 100%;
-  }
-  /* Chat box grows if needed, but user can scroll in the sidebar */
-  .chat-box {
-    max-height: none;
-  }
+  /* Expand main content to full screen */
   .main-content {
-    padding: 10px;
-  }
-  .video-container {
     width: 100%;
-    height: auto;
-    aspect-ratio: 16/9;
+    height: 100vh;
+    padding: 0;
+    position: relative;
   }
+  /* Split the video container into two halves vertically */
+  .video-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 100%;
+    border-radius: 0;
+  }
+  /* Top half: partner video */
+  .partner-video {
+    flex: 1;
+    width: 100%;
+    height: 50%;
+    object-fit: cover;
+  }
+  /* Bottom half: host video (using the user-video-overlay element) */
+  .user-video-overlay {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    height: 50%;
+    border: none;
+    border-top: 2px solid #fff;
+    object-fit: cover;
+  }
+  /* Overlay the control buttons on the host video (lower half) */
   .control-buttons-bottom {
-    flex-direction: column; /* stack buttons vertically on mobile */
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 10px;
+    z-index: 2;
+    background: transparent;
+  }
+  .control-buttons-bottom button {
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+  }
+  /* Hide common interests to maximize video area */
+  .common-interests {
+    display: none;
+  }
+  
+  /* Make chat messages inside the chat overlay fully transparent (background) */
+  .chat-overlay .chat-message.sent,
+  .chat-overlay .chat-message.received {
+    background: transparent;
   }
 }

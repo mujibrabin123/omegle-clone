@@ -4,8 +4,10 @@ import SimplePeer from "simple-peer";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
-// Connect to your signaling server.
-const socket = io("https://server-crimson-wildflower-4430.fly.dev");
+// Import the server URL from the configuration file
+import { SERVER_URL } from "./config";
+
+const socket = io(SERVER_URL);
 
 function App() {
   const [partnerId, setPartnerId] = useState(null);
@@ -17,6 +19,8 @@ function App() {
   const [myId, setMyId] = useState("");
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  // New state for toggling the chat overlay on mobile
+  const [showChat, setShowChat] = useState(false);
 
   const userVideo = useRef();
   const partnerVideo = useRef();
@@ -125,16 +129,19 @@ function App() {
         socket.emit("signal", { partnerId, signal });
       });
       peer.on("stream", (remoteStream) => {
-        console.log("Remote stream received. Audio tracks:", remoteStream.getAudioTracks().length);
+        console.log(
+          "Remote stream received. Audio tracks:",
+          remoteStream.getAudioTracks().length
+        );
         setPartnerStream(remoteStream);
         if (partnerVideo.current) {
           partnerVideo.current.srcObject = remoteStream;
           partnerVideo.current.muted = false;
           partnerVideo.current.volume = 1.0;
           partnerVideo.current.onloadedmetadata = () => {
-            partnerVideo.current.play().catch((err) =>
-              console.error("Error playing remote stream:", err)
-            );
+            partnerVideo.current
+              .play()
+              .catch((err) => console.error("Error playing remote stream:", err));
           };
         }
       });
@@ -170,7 +177,7 @@ function App() {
 
   return (
     <div className="app-wrapper">
-      {/* Sidebar */}
+      {/* Sidebar (desktop only) */}
       <div className="sidebar">
         <div className="branding">
           <h2>link UP</h2>
@@ -183,10 +190,19 @@ function App() {
                 type="text"
                 value={interests}
                 onChange={(e) => setInterests(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    findPartner();
+                  }
+                }}
                 placeholder="Enter interests (optional)"
                 className="form-control"
               />
-              <button onClick={findPartner} disabled={searching} className="btn btn-primary mt-3">
+              <button
+                onClick={findPartner}
+                disabled={searching}
+                className="btn btn-primary mt-3"
+              >
                 {searching ? "Searching..." : "Find a Partner"}
               </button>
             </div>
@@ -195,7 +211,12 @@ function App() {
             <div className="chat-box">
               <div className="chat-messages">
                 {messages.map((msg, index) => (
-                  <div key={index} className={`chat-message ${msg.sender === "you" ? "sent" : "received"}`}>
+                  <div
+                    key={index}
+                    className={`chat-message ${
+                      msg.sender === "you" ? "sent" : "received"
+                    }`}
+                  >
                     {msg.text}
                   </div>
                 ))}
@@ -205,6 +226,11 @@ function App() {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      sendMessage();
+                    }
+                  }}
                   placeholder="Type a message..."
                 />
                 <button onClick={sendMessage} className="btn btn-outline-light">
@@ -215,25 +241,80 @@ function App() {
           )}
         </div>
       </div>
+      {/* End Sidebar */}
+
       {/* Main content */}
       <div className="main-content">
         {partnerId ? (
           <>
             <div className="video-container">
-              <video ref={partnerVideo} autoPlay playsInline className="partner-video" />
-              <video ref={userVideo} autoPlay playsInline className="user-video-overlay" />
+              <video
+                ref={partnerVideo}
+                autoPlay
+                playsInline
+                className="partner-video"
+              />
+              <video
+                ref={userVideo}
+                autoPlay
+                playsInline
+                className="user-video-overlay"
+              />
             </div>
             <div className="common-interests">
               <h4>Common Interests:</h4>
-              <p>{commonInterests.length > 0 ? commonInterests.join(", ") : "None"}</p>
+              <p>
+                {commonInterests.length > 0
+                  ? commonInterests.join(", ")
+                  : "None"}
+              </p>
             </div>
             <div className="control-buttons-bottom">
-              <button onClick={() => window.location.reload()} className="btn btn-danger btn-lg">
+              <button
+                onClick={() => window.location.reload()}
+                className="btn btn-danger btn-lg"
+              >
                 Disconnect
               </button>
               <button onClick={nextPartner} className="btn btn-warning btn-lg">
                 Next
               </button>
+            </div>
+            {/* Chat toggle button (visible on mobile via CSS) */}
+            <button
+              className="chat-toggle"
+              onClick={() => setShowChat((prev) => !prev)}
+            >
+              {showChat ? "Hide Chat" : "Show Chat"}
+            </button>
+            {/* Chat overlay for mobile */}
+            <div className={`chat-overlay ${showChat ? "active" : ""}`}>
+              <div className="chat-messages">
+                {messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`chat-message ${
+                      msg.sender === "you" ? "sent" : "received"
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                ))}
+              </div>
+              <div className="chat-input">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      sendMessage();
+                    }
+                  }}
+                  placeholder="Type a message..."
+                />
+                <button onClick={sendMessage}>Send</button>
+              </div>
             </div>
           </>
         ) : (
