@@ -19,9 +19,9 @@ function App() {
   const [newMessage, setNewMessage] = useState("");
   // State for toggling chat overlay on mobile
   const [showChat, setShowChat] = useState(false);
-  // State for camera facing: "user" (front) or "environment" (back)
+  // Camera facing: "user" (front) or "environment" (back)
   const [cameraFacing, setCameraFacing] = useState("user");
-  // State to show loading indicator animation
+  // State to show loading animation while waiting for remote stream
   const [videoLoading, setVideoLoading] = useState(false);
   // Ref to skip disconnect alert if Next is triggered
   const skipDisconnectAlertRef = useRef(false);
@@ -32,11 +32,35 @@ function App() {
   // Ref to store the local video sender for track replacement
   const videoSenderRef = useRef(null);
 
+  // Preinitialize camera stream on mount to warm up camera
+  useEffect(() => {
+    async function preInitialize() {
+      try {
+        const preStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: cameraFacing },
+          audio: false,
+        });
+        // We set the preStream if not already set
+        if (!stream) {
+          setStream(preStream);
+          if (userVideo.current) {
+            userVideo.current.srcObject = preStream;
+            userVideo.current.style.transform = "scaleX(1)";
+            userVideo.current.muted = true;
+          }
+        }
+      } catch (e) {
+        console.error("Preinitialize error:", e);
+      }
+    }
+    preInitialize();
+  }, [cameraFacing, stream]);
+
   // Set the --vh variable for dynamic viewport height
   useEffect(() => {
     const setVh = () => {
       const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
     };
     setVh();
     window.addEventListener("resize", setVh);
@@ -54,7 +78,7 @@ function App() {
       setPartnerId(partnerId);
       setCommonInterests(commonInterests);
       setSearching(false);
-      // Show loading animation until remote stream arrives
+      // Show loader until remote stream arrives
       setVideoLoading(true);
     });
 
@@ -122,13 +146,13 @@ function App() {
       setStream(localStream);
       if (userVideo.current) {
         userVideo.current.srcObject = localStream;
-        // Show local video in normal (non-mirrored) mode.
         userVideo.current.style.transform = "scaleX(1)";
         userVideo.current.muted = true;
       }
       const peer = new SimplePeer({
         initiator,
-        trickle: false,
+        // Enable trickle ICE for faster connection
+        trickle: true,
         stream: localStream,
         config: {
           iceServers: [
@@ -156,7 +180,6 @@ function App() {
             partnerVideo.current
               .play()
               .catch((err) => console.error("Error playing remote stream:", err));
-            // Hide loading animation when remote video is ready
             setVideoLoading(false);
           };
         }
