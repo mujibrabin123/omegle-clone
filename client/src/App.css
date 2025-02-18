@@ -8,7 +8,7 @@ html, body {
   padding: 0;
   background: #000;
   width: 100%;
-  /* Allow the browser to handle safe areas and prevent overscroll bouncing */
+  /* Allow the browser to handle safe areas (no forced overflow hidden) */
   overscroll-behavior: none;
 }
 
