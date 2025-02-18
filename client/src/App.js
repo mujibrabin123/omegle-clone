@@ -12,16 +12,17 @@ function App() {
   const [searching, setSearching] = useState(false);
   const [interests, setInterests] = useState("");
   const [commonInterests, setCommonInterests] = useState([]);
+  // We store the local stream once granted so we don't ask permission twice.
   const [stream, setStream] = useState(null);
   const [partnerStream, setPartnerStream] = useState(null);
   const [myId, setMyId] = useState("");
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  // State for toggling chat overlay on mobile
+  // Toggle chat overlay on mobile
   const [showChat, setShowChat] = useState(false);
   // Camera facing: "user" (front) or "environment" (back)
   const [cameraFacing, setCameraFacing] = useState("user");
-  // State to show loading animation while waiting for remote stream
+  // Loading indicator for remote stream
   const [videoLoading, setVideoLoading] = useState(false);
   // Ref to skip disconnect alert if Next is triggered
   const skipDisconnectAlertRef = useRef(false);
@@ -32,16 +33,28 @@ function App() {
   // Ref to store the local video sender for track replacement
   const videoSenderRef = useRef(null);
 
-  // Preinitialize camera stream on mount to warm up camera
+  // Set the --vh variable for dynamic viewport height
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+    setVh();
+    window.addEventListener("resize", setVh);
+    return () => window.removeEventListener("resize", setVh);
+  }, []);
+
+  // Preinitialize the camera stream once on mount to warm up the camera.
+  // This will request permission once and save the stream for later use.
   useEffect(() => {
     async function preInitialize() {
       try {
-        const preStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: cameraFacing },
-          audio: false,
-        });
-        // We set the preStream if not already set
+        // If we already have a stream, do not request again.
         if (!stream) {
+          const preStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: cameraFacing },
+            audio: false,
+          });
           setStream(preStream);
           if (userVideo.current) {
             userVideo.current.srcObject = preStream;
@@ -56,17 +69,6 @@ function App() {
     preInitialize();
   }, [cameraFacing, stream]);
 
-  // Set the --vh variable for dynamic viewport height
-  useEffect(() => {
-    const setVh = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty("--vh", `${vh}px`);
-    };
-    setVh();
-    window.addEventListener("resize", setVh);
-    return () => window.removeEventListener("resize", setVh);
-  }, []);
-
   useEffect(() => {
     socket.on("connect", () => {
       console.log("Connected with ID:", socket.id);
@@ -78,7 +80,6 @@ function App() {
       setPartnerId(partnerId);
       setCommonInterests(commonInterests);
       setSearching(false);
-      // Show loader until remote stream arrives
       setVideoLoading(true);
     });
 
@@ -114,6 +115,7 @@ function App() {
     };
   }, []);
 
+  // Start the call if partnerId is set and peer hasn't been created yet.
   useEffect(() => {
     if (partnerId && myId && !peerRef.current) {
       const initiator = myId < partnerId;
@@ -133,17 +135,20 @@ function App() {
 
   const startVideoChat = async (initiator) => {
     try {
-      const localStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: cameraFacing },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 48000,
-          channelCount: 2,
-        },
-      });
-      setStream(localStream);
+      // Use the preinitialized stream if available, else request one.
+      const localStream = stream
+        ? stream
+        : await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: cameraFacing },
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+              sampleRate: 48000,
+              channelCount: 2,
+            },
+          });
+      if (!stream) setStream(localStream);
       if (userVideo.current) {
         userVideo.current.srcObject = localStream;
         userVideo.current.style.transform = "scaleX(1)";
@@ -151,14 +156,26 @@ function App() {
       }
       const peer = new SimplePeer({
         initiator,
-        // Enable trickle ICE for faster connection
-        trickle: true,
+        trickle: true, // Enable trickle ICE for faster connection
         stream: localStream,
         config: {
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
+            // TURN server using UDP (first priority)
             {
               urls: "turn:35.232.251.11:3478?transport=udp",
+              username: "mujib.rabin",
+              credential: "rabin",
+            },
+            // TURN server fallback using TCP
+            {
+              urls: "turn:35.232.251.11:3478?transport=tcp",
+              username: "mujib.rabin",
+              credential: "rabin",
+            },
+            // TURN server fallback using TLS (typically port 5349)
+            {
+              urls: "turns:35.232.251.11:5349",
               username: "mujib.rabin",
               credential: "rabin",
             },
