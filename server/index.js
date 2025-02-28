@@ -6,11 +6,13 @@ require("dotenv").config();
 
 // 🔹 Initialize Firebase Admin SDK
 const admin = require("firebase-admin");
-const serviceAccount = require("./serviceAccountKey.json");
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
+
 
 const { User, Chat, Ban, Preferences } = require("./database"); // Import MongoDB models
 
