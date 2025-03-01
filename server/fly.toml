@@ -9,7 +9,7 @@ primary_region = "arn"
 [http_service]
   # Your Node server listens on port 3000
   internal_port = 3000
-  force_https = true
+  force_https = false
   auto_stop_machines = "stop"
   auto_start_machines = true
   # Keep at least 1 machine running
