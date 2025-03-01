@@ -1,8 +1,14 @@
+// App.js
 import React, { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
 import SimplePeer from "simple-peer";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
+
+// Import authentication dependencies
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
+import SignIn from "./SignIn";
 
 // Use your server URL.
 const backendUrl =
@@ -12,32 +18,30 @@ const backendUrl =
 const socket = io(backendUrl);
 
 function App() {
+  // Authentication state
+  const [user, setUser] = useState(null);
+
+  // Existing state variables for your app
   const [partnerId, setPartnerId] = useState(null);
   const [searching, setSearching] = useState(false);
   const [interests, setInterests] = useState("");
   const [commonInterests, setCommonInterests] = useState([]);
-  // We store the local stream once granted so we don't ask permission twice.
   const [stream, setStream] = useState(null);
   const [partnerStream, setPartnerStream] = useState(null);
   const [myId, setMyId] = useState("");
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  // Toggle chat overlay on mobile
   const [showChat, setShowChat] = useState(false);
-  // Camera facing: "user" (front) or "environment" (back)
   const [cameraFacing, setCameraFacing] = useState("user");
-  // Loading indicator for remote stream
   const [videoLoading, setVideoLoading] = useState(false);
-  // Ref to skip disconnect alert if Next is triggered
   const skipDisconnectAlertRef = useRef(false);
 
   const userVideo = useRef();
   const partnerVideo = useRef();
   const peerRef = useRef(null);
-  // Ref to store the local video sender for track replacement
   const videoSenderRef = useRef(null);
 
-  // Set the --vh variable for dynamic viewport height
+  // Set dynamic viewport height.
   useEffect(() => {
     const setVh = () => {
       const vh = window.innerHeight * 0.01;
@@ -48,12 +52,10 @@ function App() {
     return () => window.removeEventListener("resize", setVh);
   }, []);
 
-  // Preinitialize the camera stream once on mount to warm up the camera.
-  // This will request permission once and save the stream for later use.
+  // Preinitialize the camera stream.
   useEffect(() => {
     async function preInitialize() {
       try {
-        // If we already have a stream, do not request again.
         if (!stream) {
           const preStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: cameraFacing },
@@ -73,6 +75,49 @@ function App() {
     preInitialize();
   }, [cameraFacing, stream]);
 
+  // Authentication listener.
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Optional: a separate useEffect for when user is authenticated.
+  useEffect(() => {
+    if (user) {
+      console.log("User authenticated:", user);
+      // Additional logic can be added here if needed.
+    }
+  }, [user]);
+
+  // Define handleSignIn to emit the socket event and update state.
+  const handleSignIn = (firebaseUser) => {
+    console.log("User signed in:", firebaseUser);
+    setUser(firebaseUser);
+    socket.emit("userAuthenticated", {
+      uid: firebaseUser.uid,
+      displayName: firebaseUser.displayName,
+      email: firebaseUser.email,
+    });
+  };
+
+  // Function to report partner.
+  const reportPartner = () => {
+    if (partnerId) {
+      // Show confirmation prompt
+      const confirmed = window.confirm("Are you sure you want to report this user?");
+      if (confirmed) {
+        // Gather session messages (for example, from your messages state)
+        const sessionMessages = messages.map((msg) => msg.text);
+        // Emit the reportUser event with the partner's socket id and session messages
+        socket.emit("reportUser", { reportedSocketId: partnerId, sessionMessages });
+      }
+    }
+  };
+  
+
+  // Socket event listeners.
   useEffect(() => {
     socket.on("connect", () => {
       console.log("Connected with ID:", socket.id);
@@ -110,12 +155,19 @@ function App() {
       setMessages((prev) => [...prev, { sender: "partner", text: message }]);
     });
 
+    // Listen for banned event.
+    socket.on("banned", (msg) => {
+      alert(msg);
+      // Optionally, you can redirect the user or update UI here.
+    });
+
     return () => {
       socket.off("connect");
       socket.off("partnerFound");
       socket.off("signal");
       socket.off("partnerDisconnected");
       socket.off("receiveMessage");
+      socket.off("banned");
     };
   }, []);
 
@@ -128,6 +180,7 @@ function App() {
     }
   }, [partnerId, myId, cameraFacing]);
 
+  // Functions remain the same.
   const findPartner = () => {
     setSearching(true);
     const interestList = interests.trim()
@@ -139,7 +192,6 @@ function App() {
 
   const startVideoChat = async (initiator) => {
     try {
-      // Use the preinitialized stream if available, else request one.
       const localStream = stream
         ? stream
         : await navigator.mediaDevices.getUserMedia({
@@ -160,24 +212,21 @@ function App() {
       }
       const peer = new SimplePeer({
         initiator,
-        trickle: true, // Enable trickle ICE for faster connection
+        trickle: true,
         stream: localStream,
         config: {
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
-            // TURN server using UDP (first priority)
             {
               urls: "turn:35.232.251.11:3478?transport=udp",
               username: "mujib.rabin",
               credential: "rabin",
             },
-            // TURN server fallback using TCP
             {
               urls: "turn:35.232.251.11:3478?transport=tcp",
               username: "mujib.rabin",
               credential: "rabin",
             },
-            // TURN server fallback using TLS (typically port 5349)
             {
               urls: "turns:35.232.251.11:5349",
               username: "mujib.rabin",
@@ -218,7 +267,6 @@ function App() {
     }
   };
 
-  // Replace the local video track without restarting the call
   const replaceLocalTrack = async () => {
     if (!peerRef.current) return;
     const newStream = await navigator.mediaDevices.getUserMedia({
@@ -284,9 +332,15 @@ function App() {
     }
   };
 
+  // Render conditionally based on authentication.
+  if (!user) {
+    return <SignIn onSignIn={handleSignIn} />;
+  }
+
+  // Otherwise, render the main app.
   return (
     <div className={`app-wrapper ${partnerId ? "video-active" : "no-partner"}`}>
-      {/* Sidebar (visible when no partner is set) */}
+      {/* Sidebar */}
       <div className="sidebar">
         <div className="branding">
           <h2>TALKVEE</h2>
@@ -337,12 +391,16 @@ function App() {
                   Send
                 </button>
               </div>
+              {/* Report Partner button */}
+              <div style={{ marginTop: "10px" }}>
+                <button onClick={reportPartner} className="btn btn-danger">
+                  Report Partner
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
-      {/* End Sidebar */}
-
       {/* Main content */}
       <div className="main-content">
         {partnerId ? (
@@ -371,15 +429,12 @@ function App() {
                 Next
               </button>
             </div>
-            {/* Small transparent switch camera icon in host area */}
             <button className="switch-camera" onClick={toggleCamera}>
               &#8635;
             </button>
-            {/* Chat toggle button (visible on mobile via CSS) */}
             <button className="chat-toggle" onClick={() => setShowChat((prev) => !prev)}>
               {showChat ? "Hide Chat" : "Show Chat"}
             </button>
-            {/* Chat overlay for mobile */}
             <div className={`chat-overlay ${showChat ? "active" : ""}`}>
               <div className="chat-messages">
                 {messages.map((msg, index) => (
