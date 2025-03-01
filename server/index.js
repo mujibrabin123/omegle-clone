@@ -6,7 +6,7 @@ require("dotenv").config();
 
 const connectDB = require("./db"); // Import the connection function
 const User = require("./models/User"); // Import the User model
-const Report = require("./models/report"); // Import the Report model (create models/Report.js)
+const Report = require("./models/report"); // Import the Report model
 
 const app = express();
 const server = http.createServer(app);
@@ -22,12 +22,21 @@ const PORT = process.env.PORT || 3000;
 // Connect to MongoDB
 connectDB();
 
+// In-memory store for session messages.
+// Key: session key (sorted combination of two socket IDs)
+// Value: array of message objects { senderUid, text, timestamp }
+const sessionMessages = {};
+
 // Store waiting users along with their interests.
 let waitingUsers = [];
 let activePairs = new Map();
 
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+  
+  // Request authentication data from the client immediately on connection.
+  // This ensures that even on reconnection, the client is prompted to re-authenticate.
+  socket.emit("requestUserAuthentication");
 
   // Listen for userAuthenticated event from the frontend
   socket.on("userAuthenticated", async (firebaseUser) => {
@@ -46,12 +55,23 @@ io.on("connection", (socket) => {
         console.log("User already exists:", user);
       }
       
+      // Check if the user's ban has expired. If yes, unban them.
+      if (user.isBanned && user.banExpiresAt && user.banExpiresAt < new Date()) {
+        user.isBanned = false;
+        user.banExpiresAt = null;
+        await user.save();
+        console.log("Ban expired; user unbanned:", user);
+      }
+      
       // Save the Firebase UID on the socket for later reference.
       socket.firebaseUid = firebaseUser.uid;
       
-      // Check if the user is banned (if they were banned previously)
+      // If the user is still banned, inform them and disconnect.
       if (user.isBanned) {
-        socket.emit("banned", "Your account has been banned.");
+        socket.emit("banned", {
+          message: "Your account has been banned.",
+          banExpiresAt: user.banExpiresAt, // frontend can calculate remaining time
+        });
         socket.disconnect();
         return;
       }
@@ -63,10 +83,37 @@ io.on("connection", (socket) => {
   });
 
   // Listen for reportUser event from the frontend.
-  // The event expects an object: { reportedSocketId, sessionMessages }
-  socket.on("reportUser", async ({ reportedSocketId, sessionMessages }) => {
-    console.log(`Received report for socket: ${reportedSocketId}`);
+  // The event expects an object: { reportedSocketId, sessionMessages (optional) }
+  socket.on("reportUser", async ({ reportedSocketId, sessionMessages: clientSessionMessages }) => {
+    console.log("reportUser event triggered");
+    console.log("Reported socket ID:", reportedSocketId);
+
+    // Ensure the reporter is authenticated.
+    if (!socket.firebaseUid) {
+      console.error("Reporter not authenticated, missing firebaseUid");
+      return socket.emit("reportAcknowledged", "Report submission failed: user not authenticated.");
+    }
+    
     try {
+      // Build session key based on the two socket IDs in sorted order.
+      const sessionKey = [socket.id, reportedSocketId].sort().join("_");
+      
+      // Use client-provided session messages if available; otherwise, use in-memory messages.
+      let messages = clientSessionMessages && clientSessionMessages.length > 0 
+        ? clientSessionMessages 
+        : (sessionMessages[sessionKey] || []);
+      
+      // If the messages from the client are simple strings, format them as objects.
+      if (messages.length > 0 && typeof messages[0] === "string") {
+        messages = messages.map(text => ({
+          senderUid: socket.firebaseUid,
+          text,
+          timestamp: new Date()
+        }));
+      }
+      
+      console.log("Session key:", sessionKey, "Messages:", messages);
+
       // Look up the reported user's Firebase UID from connected sockets.
       let reportedFirebaseUid = null;
       io.sockets.sockets.forEach((s) => {
@@ -74,18 +121,38 @@ io.on("connection", (socket) => {
           reportedFirebaseUid = s.firebaseUid;
         }
       });
-      if (reportedFirebaseUid) {
-        // Save the report in the Reports collection.
-        const report = new Report({
-          reporterUid: socket.firebaseUid,
-          reportedUid: reportedFirebaseUid,
-          messages: sessionMessages, // messages exchanged during the session
-        });
-        await report.save();
-        console.log("Report saved:", report);
-        socket.emit("reportAcknowledged", "Report submitted successfully.");
-      } else {
-        socket.emit("reportAcknowledged", "Could not find reported user.");
+      
+      // Fallback: if reported user is not found, use the reportedSocketId.
+      if (!reportedFirebaseUid) {
+        console.warn("Reported user not found among connected sockets; using reportedSocketId as fallback.");
+        reportedFirebaseUid = reportedSocketId;
+      }
+
+      // Save the report in the Reports collection (permanent storage in the DB).
+      const report = new Report({
+        reporterUid: socket.firebaseUid,
+        reportedUid: reportedFirebaseUid,
+        messages: messages,
+      });
+      await report.save();
+      console.log("Report saved:", report);
+      
+      // Optionally clear session messages for this session.
+      delete sessionMessages[sessionKey];
+      socket.emit("reportAcknowledged", "Report submitted successfully.");
+
+      // ----- Automatic Ban Logic -----
+      // If a user accumulates 10 reports, automatically ban them for 7 days.
+      const REPORT_THRESHOLD = 10;
+      const reportCount = await Report.countDocuments({ reportedUid: reportedFirebaseUid });
+      if (reportCount >= REPORT_THRESHOLD) {
+        const banDurationMs = 7 * 24 * 3600000; // 7 days in milliseconds
+        const banExpiresAt = new Date(Date.now() + banDurationMs);
+        await User.findOneAndUpdate(
+          { firebaseUid: reportedFirebaseUid },
+          { isBanned: true, banExpiresAt }
+        );
+        console.log(`User with uid ${reportedFirebaseUid} automatically banned for 7 days due to excessive reports.`);
       }
     } catch (error) {
       console.error("Error processing report:", error);
@@ -95,17 +162,14 @@ io.on("connection", (socket) => {
 
   socket.on("findPartner", (userInterests) => {
     let matchedUser = null;
-
     // Attempt to match based on interests.
     for (let i = 0; i < waitingUsers.length; i++) {
       const waitingUser = waitingUsers[i];
-      // If either user has no interests, match immediately.
       if (userInterests.length === 0 || waitingUser.interests.length === 0) {
         matchedUser = waitingUser;
         waitingUsers.splice(i, 1);
         break;
       }
-      // Otherwise, check for common interests.
       const commonInterests = waitingUser.interests.filter((interest) =>
         userInterests.includes(interest)
       );
@@ -115,12 +179,9 @@ io.on("connection", (socket) => {
         break;
       }
     }
-
     if (matchedUser) {
       activePairs.set(socket.id, matchedUser.socketId);
       activePairs.set(matchedUser.socketId, socket.id);
-
-      // Inform both users about the match.
       io.to(socket.id).emit("partnerFound", {
         partnerId: matchedUser.socketId,
         commonInterests: matchedUser.interests,
@@ -145,10 +206,22 @@ io.on("connection", (socket) => {
     waitingUsers = waitingUsers.filter((user) => user.socketId !== socket.id);
   });
 
-  // Handle chat messages (messages are simply forwarded; report system handles inappropriate content).
+  // Handle chat messages.
   socket.on("sendMessage", (message) => {
     const partnerId = activePairs.get(socket.id);
     if (partnerId) {
+      // Build session key for this pair.
+      const sessionKey = [socket.id, partnerId].sort().join("_");
+      if (!sessionMessages[sessionKey]) {
+        sessionMessages[sessionKey] = [];
+      }
+      sessionMessages[sessionKey].push({
+        senderUid: socket.firebaseUid,
+        text: message,
+        timestamp: new Date()
+      });
+      console.log("Updated session messages for", sessionKey, ":", sessionMessages[sessionKey]);
+      // Forward the message to the partner.
       io.to(partnerId).emit("receiveMessage", message);
     }
   });
@@ -167,6 +240,26 @@ io.on("connection", (socket) => {
       activePairs.delete(socket.id);
     }
   });
+});
+
+// ----- Admin Manual Ban Endpoint -----
+// This endpoint allows an admin (or your system) to manually ban a user.
+// Pass in the user's firebaseUid and a banDuration (in hours).
+app.post("/banUser", async (req, res) => {
+  const { firebaseUid, banDuration } = req.body; // banDuration in hours (e.g., 240 for 10 days, 720 for 1 month)
+  try {
+    const banExpiresAt = banDuration ? new Date(Date.now() + banDuration * 3600000) : null;
+    const user = await User.findOneAndUpdate(
+      { firebaseUid },
+      { isBanned: true, banExpiresAt },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ message: "User banned successfully", user });
+  } catch (error) {
+    console.error("Error banning user:", error);
+    res.status(500).json({ error: "Error banning user" });
+  }
 });
 
 app.get("/", (req, res) => {
