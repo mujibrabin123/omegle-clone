@@ -9,26 +9,31 @@ primary_region = "arn"
 [http_service]
   # Your Node server listens on port 3000
   internal_port = 3000
-  force_https = false   # Disable forced HTTPS for now
+  force_https = true
   auto_stop_machines = "stop"
   auto_start_machines = true
-  # Keep at least 1 machine running
+  # Ensure at least one machine is always running
   min_machines_running = 1
   processes = ["app"]
 
-  # Route HTTP traffic only (remove port 443 for now)
+  # Route HTTP traffic (port 80)
   [[http_service.ports]]
     port = 80
     handlers = ["http"]
 
-  # Health check on "/" with more lenient settings
+  # Route HTTPS traffic (port 443)
+  [[http_service.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  # Health check on "/" with reasonable settings
   [[http_service.http_checks]]
     interval = "10s"
-    grace_period = "30s"   # Increase grace period to allow slower startups
+    grace_period = "30s"
     method = "get"
     path = "/"
     protocol = "http"
-    timeout = "5s"         # Increase timeout
+    timeout = "5s"
 
 [[vm]]
   memory = "1gb"
