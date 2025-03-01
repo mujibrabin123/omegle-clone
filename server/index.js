@@ -4,6 +4,10 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 require("dotenv").config();
 
+const connectDB = require("./db"); // Import the connection function
+const User = require("./models/User"); // Import the User model
+const Report = require("./models/report"); // Import the Report model (create models/Report.js)
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -15,12 +19,79 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
+// Connect to MongoDB
+connectDB();
+
 // Store waiting users along with their interests.
 let waitingUsers = [];
 let activePairs = new Map();
 
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+
+  // Listen for userAuthenticated event from the frontend
+  socket.on("userAuthenticated", async (firebaseUser) => {
+    console.log("Received userAuthenticated event:", firebaseUser);
+    try {
+      let user = await User.findOne({ firebaseUid: firebaseUser.uid });
+      if (!user) {
+        user = new User({
+          firebaseUid: firebaseUser.uid,
+          displayName: firebaseUser.displayName,
+          email: firebaseUser.email,
+        });
+        await user.save();
+        console.log("New user saved to MongoDB:", user);
+      } else {
+        console.log("User already exists:", user);
+      }
+      
+      // Save the Firebase UID on the socket for later reference.
+      socket.firebaseUid = firebaseUser.uid;
+      
+      // Check if the user is banned (if they were banned previously)
+      if (user.isBanned) {
+        socket.emit("banned", "Your account has been banned.");
+        socket.disconnect();
+        return;
+      }
+      
+      socket.emit("userSaved", user);
+    } catch (error) {
+      console.error("Error handling user in MongoDB:", error);
+    }
+  });
+
+  // Listen for reportUser event from the frontend.
+  // The event expects an object: { reportedSocketId, sessionMessages }
+  socket.on("reportUser", async ({ reportedSocketId, sessionMessages }) => {
+    console.log(`Received report for socket: ${reportedSocketId}`);
+    try {
+      // Look up the reported user's Firebase UID from connected sockets.
+      let reportedFirebaseUid = null;
+      io.sockets.sockets.forEach((s) => {
+        if (s.id === reportedSocketId) {
+          reportedFirebaseUid = s.firebaseUid;
+        }
+      });
+      if (reportedFirebaseUid) {
+        // Save the report in the Reports collection.
+        const report = new Report({
+          reporterUid: socket.firebaseUid,
+          reportedUid: reportedFirebaseUid,
+          messages: sessionMessages, // messages exchanged during the session
+        });
+        await report.save();
+        console.log("Report saved:", report);
+        socket.emit("reportAcknowledged", "Report submitted successfully.");
+      } else {
+        socket.emit("reportAcknowledged", "Could not find reported user.");
+      }
+    } catch (error) {
+      console.error("Error processing report:", error);
+      socket.emit("reportAcknowledged", "Error submitting report.");
+    }
+  });
 
   socket.on("findPartner", (userInterests) => {
     let matchedUser = null;
@@ -72,10 +143,9 @@ io.on("connection", (socket) => {
       activePairs.delete(socket.id);
     }
     waitingUsers = waitingUsers.filter((user) => user.socketId !== socket.id);
-    // Do not automatically emit a new findPartner event; let the client requeue.
   });
 
-  // Handle chat messages.
+  // Handle chat messages (messages are simply forwarded; report system handles inappropriate content).
   socket.on("sendMessage", (message) => {
     const partnerId = activePairs.get(socket.id);
     if (partnerId) {
