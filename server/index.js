@@ -6,12 +6,18 @@ require("dotenv").config();
 
 // 🔹 Initialize Firebase Admin SDK
 const admin = require("firebase-admin");
+const fs = require("fs");
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+try {
+    const serviceAccount = JSON.parse(fs.readFileSync("./serviceAccountKey.json", "utf8"));
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+    });
+} catch (error) {
+    console.error("❌ ERROR: Failed to load Firebase service account JSON", error);
+    process.exit(1);
+}
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
 
 
 const { User, Chat, Ban, Preferences } = require("./database"); // Import MongoDB models
