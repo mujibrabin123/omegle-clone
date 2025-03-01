@@ -5,7 +5,11 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 // Use your server URL.
-const socket = io("https://server-crimson-wildflower-4430.fly.dev");
+const backendUrl =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://server-crimson-wildflower-4430.fly.dev";
+const socket = io(backendUrl);
 
 function App() {
   const [partnerId, setPartnerId] = useState(null);
