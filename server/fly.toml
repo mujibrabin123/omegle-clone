@@ -10,8 +10,7 @@ primary_region = 'arn'
 
 [env]
   NODE_ENV = "production"
-  FIREBASE_CONFIG = "FLY_SECRET_FIREBASE_CONFIG"
-
+  
 [http_service]
   internal_port = 3000
   force_https = true
