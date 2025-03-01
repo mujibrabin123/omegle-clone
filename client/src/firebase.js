@@ -1,6 +1,6 @@
 // firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCK1pdvlEvD4z-FjQHD17xp7r82ZxO3eD8",
@@ -14,6 +14,17 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// Explicitly set auth persistence to local storage to maintain user sessions
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log("Firebase auth persistence set to local.");
+  })
+  .catch((error) => {
+    console.error("Error setting Firebase auth persistence:", error);
+  });
+
 const googleProvider = new GoogleAuthProvider();
 
 export { auth, googleProvider };
+

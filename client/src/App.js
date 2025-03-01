@@ -9,6 +9,7 @@ import "./App.css";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 import SignIn from "./SignIn";
+import Banned from "./banned"; // Import the new banned component
 
 // Use your server URL.
 const backendUrl =
@@ -79,16 +80,34 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        console.log("User authenticated (onAuthStateChanged):", currentUser);
+        socket.emit("userAuthenticated", {
+          uid: currentUser.uid,
+          displayName: currentUser.displayName,
+          email: currentUser.email,
+        });
+      }
     });
     return unsubscribe;
   }, []);
 
-  // Optional: a separate useEffect for when user is authenticated.
+  // Listen for the requestUserAuthentication event from the server.
+  // When received, if the user is already signed in, emit the userAuthenticated event.
   useEffect(() => {
-    if (user) {
-      console.log("User authenticated:", user);
-      // Additional logic can be added here if needed.
-    }
+    socket.on("requestUserAuthentication", () => {
+      if (user) {
+        console.log("Server requested re-authentication. Re-emitting userAuthenticated.");
+        socket.emit("userAuthenticated", {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+        });
+      }
+    });
+    return () => {
+      socket.off("requestUserAuthentication");
+    };
   }, [user]);
 
   // Define handleSignIn to emit the socket event and update state.
@@ -105,17 +124,14 @@ function App() {
   // Function to report partner.
   const reportPartner = () => {
     if (partnerId) {
-      // Show confirmation prompt
-      const confirmed = window.confirm("Are you sure you want to report this user?");
-      if (confirmed) {
-        // Gather session messages (for example, from your messages state)
-        const sessionMessages = messages.map((msg) => msg.text);
-        // Emit the reportUser event with the partner's socket id and session messages
-        socket.emit("reportUser", { reportedSocketId: partnerId, sessionMessages });
+      if (window.confirm("Are you sure you want to report this user?")) {
+        console.log("Reporting partner with socket ID:", partnerId);
+        const sessionMessagesData = messages.map((msg) => msg.text);
+        console.log("Session messages being sent:", sessionMessagesData);
+        socket.emit("reportUser", { reportedSocketId: partnerId, sessionMessages: sessionMessagesData });
       }
     }
   };
-  
 
   // Socket event listeners.
   useEffect(() => {
@@ -156,9 +172,10 @@ function App() {
     });
 
     // Listen for banned event.
-    socket.on("banned", (msg) => {
-      alert(msg);
-      // Optionally, you can redirect the user or update UI here.
+    socket.on("banned", (data) => {
+      // Data contains the banned message and banExpiresAt
+      alert(data.message);
+      setUser((prevUser) => ({ ...prevUser, isBanned: true, banExpiresAt: data.banExpiresAt }));
     });
 
     return () => {
@@ -331,6 +348,11 @@ function App() {
       await startVideoChat(true);
     }
   };
+
+  // If the user is banned, render the Banned component with a countdown timer.
+  if (user && user.isBanned && user.banExpiresAt) {
+    return <Banned banExpiresAt={user.banExpiresAt} />;
+  }
 
   // Render conditionally based on authentication.
   if (!user) {
