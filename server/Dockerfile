@@ -11,6 +11,9 @@ WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV="production"
+ARG FIREBASE_CONFIG
+ENV FIREBASE_CONFIG=$FIREBASE_CONFIG
+
 
 
 # Throw-away build stage to reduce size of final image
