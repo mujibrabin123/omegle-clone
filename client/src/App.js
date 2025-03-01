@@ -21,6 +21,7 @@ const socket = io(backendUrl);
 function App() {
   // Authentication state
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // NEW: loading state
 
   // Existing state variables for your app
   const [partnerId, setPartnerId] = useState(null);
@@ -88,6 +89,7 @@ function App() {
           email: currentUser.email,
         });
       }
+      setLoading(false); // NEW: set loading to false when auth state is determined
     });
     return unsubscribe;
   }, []);
@@ -352,6 +354,11 @@ function App() {
   // If the user is banned, render the Banned component with a countdown timer.
   if (user && user.isBanned && user.banExpiresAt) {
     return <Banned banExpiresAt={user.banExpiresAt} />;
+  }
+
+  // NEW: If still loading authentication state, show a loading indicator.
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
   // Render conditionally based on authentication.
