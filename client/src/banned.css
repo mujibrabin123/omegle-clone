@@ -1,0 +1,41 @@
+/* Banned.css */
+.banned-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000; /* Ensure it appears above all content */
+  }
+  
+  .banned-modal {
+    background: #fff;
+    padding: 40px 50px;
+    border-radius: 8px;
+    text-align: center;
+    width: 350px; /* Adjust width as needed */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .banned-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: #333;
+  }
+  
+  .banned-message {
+    font-size: 1rem;
+    margin-bottom: 20px;
+    color: #555;
+  }
+  
+  .banned-countdown {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #d00;
+  }
+  

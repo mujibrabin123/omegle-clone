@@ -9,7 +9,7 @@ import "./App.css";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 import SignIn from "./SignIn";
-import Banned from "./banned"; // Import the new banned component
+import Banned from "./banned"; // Import the banned component
 
 // Use your server URL.
 const backendUrl =
@@ -21,7 +21,7 @@ const socket = io(backendUrl);
 function App() {
   // Authentication state
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // NEW: loading state
+  const [loading, setLoading] = useState(true); // loading state
 
   // Existing state variables for your app
   const [partnerId, setPartnerId] = useState(null);
@@ -89,13 +89,12 @@ function App() {
           email: currentUser.email,
         });
       }
-      setLoading(false); // NEW: set loading to false when auth state is determined
+      setLoading(false); // set loading to false when auth state is determined
     });
     return unsubscribe;
   }, []);
 
   // Listen for the requestUserAuthentication event from the server.
-  // When received, if the user is already signed in, emit the userAuthenticated event.
   useEffect(() => {
     socket.on("requestUserAuthentication", () => {
       if (user) {
@@ -351,22 +350,12 @@ function App() {
     }
   };
 
-  // If the user is banned, render the Banned component with a countdown timer.
-  if (user && user.isBanned && user.banExpiresAt) {
-    return <Banned banExpiresAt={user.banExpiresAt} />;
-  }
-
-  // NEW: If still loading authentication state, show a loading indicator.
+  // If still loading authentication state, show a loading indicator.
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  // Render conditionally based on authentication.
-  if (!user) {
-    return <SignIn onSignIn={handleSignIn} />;
-  }
-
-  // Otherwise, render the main app.
+  // Render the main app UI regardless of authentication state.
   return (
     <div className={`app-wrapper ${partnerId ? "video-active" : "no-partner"}`}>
       {/* Sidebar */}
@@ -420,7 +409,7 @@ function App() {
                   Send
                 </button>
               </div>
-              {/* Report Partner button */}
+              {/* Report Partner button for desktop (in sidebar) */}
               <div style={{ marginTop: "10px" }}>
                 <button onClick={reportPartner} className="btn btn-danger">
                   Report Partner
@@ -495,6 +484,12 @@ function App() {
           </div>
         )}
       </div>
+      {/* Conditionally render the SignIn overlay if user is not authenticated */}
+      {!user && <SignIn onSignIn={handleSignIn} />}
+      {/* Conditionally render the Banned overlay if user is banned */}
+      {user && user.isBanned && user.banExpiresAt && <Banned banExpiresAt={user.banExpiresAt} />}
+      {/* Floating Report button for mobile view when partner is active */}
+      {partnerId && <button className="report-partner-btn" onClick={reportPartner}>Report</button>}
     </div>
   );
 }

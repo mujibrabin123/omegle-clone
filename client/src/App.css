@@ -359,3 +359,27 @@ html, body {
     right: auto;
   }
 }
+
+/* By default hide the floating report button */
+.report-partner-btn {
+  display: none;
+}
+
+/* Mobile styling for the floating Report button */
+@media (max-width: 768px) {
+  .report-partner-btn {
+    display: block;
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 10px);
+    left: 10px;
+    z-index: 1000;
+    background: rgba(255, 0, 0, 0.8);
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+}
+

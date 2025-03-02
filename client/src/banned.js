@@ -1,5 +1,6 @@
 // Banned.js
 import React, { useEffect, useState } from "react";
+import "./banned.css";
 
 const Banned = ({ banExpiresAt }) => {
   const [remainingTime, setRemainingTime] = useState("");
@@ -26,9 +27,12 @@ const Banned = ({ banExpiresAt }) => {
   }, [banExpiresAt]);
 
   return (
-    <div className="banned-container">
-      <h1>Your account is banned</h1>
-      <p>Your ban will be lifted in: {remainingTime}</p>
+    <div className="banned-overlay">
+      <div className="banned-modal">
+        <h2 className="banned-title">Account Banned</h2>
+        <p className="banned-message">You have been banned for violating our terms.</p>
+        <p className="banned-countdown">Ban lifts in: {remainingTime}</p>
+      </div>
     </div>
   );
 };
