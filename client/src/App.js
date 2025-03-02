@@ -61,7 +61,11 @@ function App() {
         if (!stream) {
           const preStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: cameraFacing },
-            audio: false,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
           });
           setStream(preStream);
           if (userVideo.current) {
