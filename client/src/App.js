@@ -202,6 +202,22 @@ function App() {
     }
   }, [partnerId, myId, cameraFacing]);
 
+  // Add this useEffect hook to handle scrolling behavior
+useEffect(() => {
+  if (partnerId) {
+    // Disable scrolling when video chat is active
+    document.body.style.overflow = 'hidden';
+  } else {
+    // Re-enable scrolling when video chat ends
+    document.body.style.overflow = 'auto';
+  }
+
+  // Cleanup function to re-enable scrolling when the component unmounts
+  return () => {
+    document.body.style.overflow = 'auto';
+  };
+}, [partnerId]);
+
   // Functions remain the same.
   const findPartner = () => {
     setSearching(true);

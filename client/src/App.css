@@ -6,7 +6,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #000;
+  background: #fff; /* Changed to white */
   width: 100%;
   /* Allow the browser to handle safe areas (no forced overflow hidden) */
   overscroll-behavior: none;
@@ -28,22 +28,28 @@ html, body {
 /* Sidebar styling */
 .sidebar {
   width: 300px;
-  background: #2c2c2c;
+  background: linear-gradient(to top, #1e3c72, #2a5298); /* Gradient from bottom (lighter) to top (darker) */
   color: #fff;
   display: flex;
   flex-direction: column;
   padding: 20px;
   overflow-y: auto;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar .branding h2 {
   margin: 0;
   font-size: 2rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .sidebar .branding p {
   font-size: 0.9rem;
   margin: 5px 0 20px;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* This container pushes content to the bottom */
@@ -65,15 +71,18 @@ html, body {
   width: 100%;
   max-width: 260px;
   box-sizing: border-box;
-  background: #3c3c3c;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   padding: 15px;
-  border-radius: 8px;
+  border-radius: 12px;
   color: #fff;
   font-size: 1rem;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   max-height: 350px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden; /* Ensure nothing overflows the chat box */
 }
 
 .chat-messages {
@@ -81,6 +90,9 @@ html, body {
   overflow-y: auto;
   margin-bottom: 10px;
   font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* Add spacing between messages */
 }
 
 .chat-message {
@@ -88,20 +100,35 @@ html, body {
   padding: 8px;
   border-radius: 8px;
   word-break: break-word;
+  max-width: 80%; /* Limit message width */
 }
 
 .chat-message.sent {
-  background: #007bff;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: #fff;
+  align-self: flex-end; /* Align your messages to the right */
   text-align: right;
+  border-bottom-right-radius: 4px; /* Add a subtle curve to the right side */
 }
 
 .chat-message.received {
-  background: #6c757d;
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  color: #fff;
+  align-self: flex-start; /* Align partner's messages to the left */
   text-align: left;
+  border-bottom-left-radius: 4px; /* Add a subtle curve to the left side */
 }
 
 .chat-input {
   display: flex;
+  align-items: center; /* Align input and button vertically */
+  gap: 8px; /* Add spacing between input and button */
+  background: rgba(255, 255, 255, 0.1); /* Match the chat box background */
+  border-radius: 8px; /* Match the chat box border radius */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Match the chat box border */
+  padding: 8px; /* Add padding to the container */
+  width: 100%; /* Ensure the input container takes full width */
+  box-sizing: border-box; /* Include padding in width calculation */
 }
 
 .chat-input input {
@@ -109,20 +136,38 @@ html, body {
   padding: 8px;
   border: none;
   border-radius: 4px;
-  margin-right: 4px;
   font-size: 1rem;
+  background: transparent; /* Make input background transparent */
+  color: #fff;
+  outline: none; /* Remove default input outline */
+  width: calc(100% - 80px); /* Adjust width to leave space for the button */
+}
+
+.chat-input input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .chat-input button {
   padding: 8px 12px;
   font-size: 1rem;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  flex-shrink: 0; /* Prevent the button from shrinking */
+  width: 70px; /* Set a fixed width for the button */
 }
 
+.chat-input button:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #003d80 100%);
+}
 /* Main content */
 .main-content {
   flex: 1;
   position: relative;
-  background: #000;
+  background: #fff; /* Changed to white */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -130,6 +175,7 @@ html, body {
   padding: 20px;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
+  overflow: hidden; /* Prevent scrolling inside main content */
 }
 
 /* Video container */
@@ -139,9 +185,10 @@ html, body {
   max-width: 800px;
   height: 450px;
   background: #000;
-  border: 2px solid #444;
-  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Loader overlay with animated circles */
@@ -151,7 +198,7 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -206,7 +253,7 @@ html, body {
   right: 10px;
   width: 150px;
   height: 100px;
-  border: 2px solid #fff;
+  border: 2px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
   object-fit: cover;
 }
@@ -214,7 +261,7 @@ html, body {
 /* Common interests */
 .common-interests {
   margin-top: 15px;
-  color: #fff;
+  color: #000; /* Changed to black for better contrast on white background */
   font-size: 1.1rem;
 }
 
@@ -226,6 +273,29 @@ html, body {
   justify-content: center;
 }
 
+.control-buttons-bottom button {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  border: none;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.control-buttons-bottom button:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #003d80 100%);
+}
+
+.control-buttons-bottom button.btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+}
+
+.control-buttons-bottom button.btn-danger:hover {
+  background: linear-gradient(135deg, #a71d2a 0%, #7a1520 100%);
+}
+
 /* Chat overlay for mobile */
 .chat-overlay {
   position: absolute;
@@ -233,7 +303,7 @@ html, body {
   left: 0;
   width: 100%;
   max-height: 40%;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   color: #fff;
   display: none;
   flex-direction: column;
@@ -253,7 +323,7 @@ html, body {
   top: calc(env(safe-area-inset-top) + 10px);
   right: 10px;
   z-index: 3;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   color: #fff;
   border: none;
   padding: 8px 12px;
@@ -267,13 +337,18 @@ html, body {
   top: 10px;
   right: 10px;
   z-index: 4;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.5);
   border: none;
   color: #fff;
   font-size: 1.5rem;
-  padding: 5px;
+  padding: 10px;
   border-radius: 50%;
   cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.switch-camera:hover {
+  background: rgba(0, 0, 0, 0.8);
 }
 
 /* Responsive styling for mobile */
@@ -310,6 +385,7 @@ html, body {
     max-width: 100%;
     border-radius: 0;
   }
+
   /* Split video container equally */
   .partner-video {
     flex: 1;
@@ -323,26 +399,50 @@ html, body {
     width: 100%;
     height: 50%;
     border: none;
-    border-top: 2px solid #fff;
+    border-top: 2px solid rgba(0, 0, 0, 0.1);
     object-fit: cover;
   }
   /* Position control buttons above safe area */
   .control-buttons-bottom {
-    position: absolute;
-    bottom: calc(20px + env(safe-area-inset-bottom));
+    position: fixed; /* Fix buttons at the bottom */
+    bottom: calc(env(safe-area-inset-bottom) + 10px); /* Account for safe area */
     left: 50%;
     transform: translateX(-50%);
+    display: flex;
     gap: 10px;
-    z-index: 1;
-    background: transparent;
+    z-index: 1000; /* Ensure buttons are above other elements */
+    background: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+    padding: 10px;
+    border-radius: 8px;
   }
   .control-buttons-bottom button {
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     border: none;
     color: #fff;
     padding: 8px 16px;
     border-radius: 4px;
   }
+
+  .chat-overlay {
+    position: fixed; /* Fix chat overlay at the bottom */
+    bottom: calc(env(safe-area-inset-bottom) + 80px); /* Position above buttons */
+    left: 0;
+    width: 100%;
+    max-height: 40%;
+    background: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+    color: #fff;
+    display: none;
+    flex-direction: column;
+    padding: 10px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    z-index: 999; /* Ensure chat is below buttons */
+  }
+
+  .chat-overlay.active {
+    display: flex;
+  }
+
   /* Hide common interests */
   .common-interests {
     display: none;
@@ -382,4 +482,3 @@ html, body {
     cursor: pointer;
   }
 }
-
